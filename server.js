@@ -5,7 +5,7 @@ const app = express();
 app.use(express.json());
 
 // ✅ async handler
-app.post('/lead-details', async (req, res) => {
+app.post(process.env.API_URL + '/lead-details', async (req, res) => {
   try {
     const leadData = req.body;
 
