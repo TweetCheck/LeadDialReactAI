@@ -14,6 +14,7 @@ const addLeadNote = tool({
   description: "Add a short, structured note to the lead’s record based on the SMS conversation without changing lead or booking fields.",
   parameters: z.object({
     lead_id: z.number(),
+    lead_numbers_id: z.number(),
     note_type: z.string(),
     channel: z.string(),
     content: z.string()
@@ -21,27 +22,27 @@ const addLeadNote = tool({
   execute: async (input) => {
     console.log("Note added:", input);
 
-    // try {
-    //   const response = await fetch("https://your-api-url.com/lead/note", {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       //"Authorization": `Bearer ${process.env.EXTERNAL_API_TOKEN}` // optional
-    //     },
-    //     body: JSON.stringify({
-    //       lead_id: input.lead_id,
-    //       content: input.content
-    //     })
-    //   });
+    try {
+      const response = await fetch("https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          //"Authorization": `Bearer ${process.env.EXTERNAL_API_TOKEN}` // optional
+        },
+        body: JSON.stringify({
+          lead_numbers_id: input.lead_numbers_id,
+          message: input.content
+        })
+      });
 
-    //   const result = await response.json();
-    //   console.log("External API response:", result);
+      const result = await response.json();
+      console.log("External API response:", result);
 
-    //   return { success: true };
-    // } catch (error) {
-    //   console.error("Failed to send lead note:", error);
-    //   return { success: false };
-    // }
+      return { success: true };
+    } catch (error) {
+      console.error("Failed to send lead note:", error);
+      return { success: false };
+    }
   },
 });
 
