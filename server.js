@@ -20,11 +20,12 @@ app.post('/lead-details', async (req, res) => {
       move_size_id,
       move_date,
       payment_link,
+      lead_staus,
       sms_content
     } = req.body;
 
-    const input_as_text = `${sms_content} from ${from_zip} to ${to_zip} lead_id: ${lead_id} lead_numbers_id: ${lead_numbers_id} move_size: ${move_size_id} move_date: ${move_date} payment_link: ${payment_link}`;
-    
+    const input_as_text = `${sms_content} lead_id: ${lead_id} from_zip: ${from_zip} to_zip ${to_zip} move_size: ${move_size_id} move_date: ${move_date} lead_staus: ${lead_staus} payment_link: ${payment_link}`;
+    //const input_as_text = `${sms_content} lead_id: ${lead_id}`;
     console.log('📨 Lead received:', lead_id);
     console.log('🔧 Workflow input:', input_as_text);
 
@@ -32,16 +33,18 @@ app.post('/lead-details', async (req, res) => {
       input_as_text
     });
 
+    const customerMessage = extractCustomerMessage(result.response_text);
+    console.log('🤖 Agent response:', customerMessage);
     const smsResult = await sendCustomerSMS({
       lead_numbers_id: lead_numbers_id,
-      content: result.reply_text || 'No reply generated.'
+      content: customerMessage || 'No reply generated.'
   });
 
     res.status(200).json({
       success: true,
       message: 'Lead processed successfully',
       data: leadData,
-      sdk_result: result,
+      sdk_result: { response_text: customerMessage },
       sms_result: smsResult
     });
 
@@ -54,6 +57,10 @@ app.post('/lead-details', async (req, res) => {
   }
 });
 
+function extractCustomerMessage(responseText) {
+  const parts = responseText.split('Customer Message:');
+  return parts.length > 1 ? parts[1].trim() : responseText;
+}
 
 async function sendCustomerSMS({ lead_numbers_id, content }) {
   try {
