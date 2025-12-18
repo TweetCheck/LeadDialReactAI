@@ -19,10 +19,11 @@ app.post('/lead-details', async (req, res) => {
       to_zip,
       move_size_id,
       move_date,
+      payment_link,
       sms_content
     } = req.body;
 
-    const input_as_text = `${sms_content} from ${from_zip} to ${to_zip} lead_id: ${lead_id} lead_numbers_id: ${lead_numbers_id} move_size: ${move_size_id} move_date: ${move_date}`;
+    const input_as_text = `${sms_content} from ${from_zip} to ${to_zip} lead_id: ${lead_id} lead_numbers_id: ${lead_numbers_id} move_size: ${move_size_id} move_date: ${move_date} payment_link: ${payment_link}`;
     
     console.log('📨 Lead received:', lead_id);
     console.log('🔧 Workflow input:', input_as_text);
