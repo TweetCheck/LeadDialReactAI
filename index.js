@@ -284,7 +284,7 @@ export const runWorkflow = async (workflow) => {
     const runner = new Runner({
       traceMetadata: {
         __trace_source__: "agent-builder",
-        workflow_id: "wf_6931c772ff8c81908fff85b4fb72c1c3056726a60d9df628"
+        workflow_id: "wf_694459d5313c8190a12223f1e761d67c0e775e912a00b627"
       }
     });
     try {
