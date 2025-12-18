@@ -31,11 +31,17 @@ app.post('/lead-details', async (req, res) => {
       input_as_text
     });
 
+    const smsResult = await sendCustomerSMS({
+      lead_numbers_id: lead_numbers_id,
+      content: result.reply_text || 'No reply generated.'
+  });
+
     res.status(200).json({
       success: true,
       message: 'Lead processed successfully',
       data: leadData,
-      sdk_result: result
+      sdk_result: result,
+      sms_result: smsResult
     });
 
   } catch (error) {
@@ -46,6 +52,35 @@ app.post('/lead-details', async (req, res) => {
     });
   }
 });
+
+
+async function sendCustomerSMS({ lead_numbers_id, content }) {
+  try {
+    const response = await fetch(
+      "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // "Authorization": `Bearer ${process.env.EXTERNAL_API_TOKEN}` // if needed
+        },
+        body: JSON.stringify({
+          lead_numbers_id,
+          message: content
+        })
+      }
+    );
+
+    const result = await response.json();
+    console.log("📤 SMS API response:", result);
+
+    return { success: true, result };
+  } catch (error) {
+    console.error("❌ Failed to send SMS:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 
 // Health check endpoint
 app.get('/health', (req, res) => {
