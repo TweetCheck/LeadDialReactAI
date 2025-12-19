@@ -1,5 +1,5 @@
 import express from 'express';
-import { runWorkflow } from './index.js';
+import { runWorkflow,addLeadNote } from './index.js';
 import cors from 'cors';
 
 const app = express();
@@ -14,6 +14,8 @@ app.post('/lead-details', async (req, res) => {
 
     const {
       lead_id,
+      name,
+      email,
       lead_numbers_id,
       from_zip,
       to_zip,
@@ -24,8 +26,7 @@ app.post('/lead-details', async (req, res) => {
       sms_content
     } = req.body;
 
-    const input_as_text = `${sms_content} lead_id: ${lead_id} from_zip: ${from_zip} to_zip ${to_zip} move_size: ${move_size_id} move_date: ${move_date} lead_staus: ${lead_staus} payment_link: ${payment_link}`;
-    //const input_as_text = `${sms_content} lead_id: ${lead_id}`;
+    const input_as_text = `${sms_content} lead_id: ${lead_id} is ${lead_staus}, name: ${name} email: ${email} from_zip: ${from_zip} to_zip ${to_zip} move_size: ${move_size_id} move_date: ${move_date} lead_staus: ${lead_staus} payment_link: ${payment_link}`;
     console.log('📨 Lead received:', lead_id);
     console.log('🔧 Workflow input:', input_as_text);
 
@@ -33,18 +34,34 @@ app.post('/lead-details', async (req, res) => {
       input_as_text
     });
 
-    const customerMessage = extractCustomerMessage(result.response_text);
+    const responseText = result.response_text;
+    const customerMessage = extractCustomerMessage(responseText);
+    
+    // Detect if addLeadNote was called and extract note_type
+    let noteType = 'text';
+    if (responseText.includes('add_lead_note')) {
+      // Parse the note_type from the tool parameters
+      const noteMatch = responseText.match(/"note_type":\s*"([^"]+)"/);
+      noteType = 'note'
+      console.log('📝 Note detected - type:', noteMatch);
+    } 
+    console.log('📝 Note type:', noteType);
     console.log('🤖 Agent response:', customerMessage);
-    const smsResult = await sendCustomerSMS({
+    
+    // Send SMS with note_type if available
+    const smsParams = {
       lead_numbers_id: lead_numbers_id,
-      content: customerMessage || 'No reply generated.'
-  });
+      content: customerMessage || 'No reply generated.',
+      type: noteType // Pass note_type if detected
+    };
+
+    const smsResult = await sendCustomerSMS(smsParams);
 
     res.status(200).json({
       success: true,
       message: 'Lead processed successfully',
       data: leadData,
-      sdk_result: { response_text: customerMessage },
+      sdk_result: { response_text: result.response_text },
       sms_result: smsResult
     });
 
@@ -62,7 +79,7 @@ function extractCustomerMessage(responseText) {
   return parts.length > 1 ? parts[1].trim() : responseText;
 }
 
-async function sendCustomerSMS({ lead_numbers_id, content }) {
+async function sendCustomerSMS({ lead_numbers_id, content, note_type }) {
   try {
     const response = await fetch(
       "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
@@ -70,11 +87,11 @@ async function sendCustomerSMS({ lead_numbers_id, content }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // "Authorization": `Bearer ${process.env.EXTERNAL_API_TOKEN}` // if needed
         },
         body: JSON.stringify({
           lead_numbers_id,
-          message: content
+          message: content,
+          note_type // Add note_type parameter
         })
       }
     );

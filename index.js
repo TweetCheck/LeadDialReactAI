@@ -18,6 +18,8 @@ const addLeadNote = tool({
     // TODO: Unimplemented
   },
 });
+
+
 const updateLeadFields = tool({
   name: "updateLeadFields",
   description: "Update fields of a lead using its lead ID; only lead ID is required, other fields are optional and can be updated or inserted if not present.",
@@ -25,10 +27,10 @@ const updateLeadFields = tool({
     lead_id: z.string(),
     name: z.string(),
     email: z.string(),
-    phone: z.string(),
-    status: z.string(),
-    source: z.string(),
-    notes: z.string()
+    from_zipcode: z.string(),
+    to_zipcode: z.string(),
+    move_date: z.string(),
+    move_size: z.string()
   }),
   execute: async (input) => {
     console.log("Lead fields updated:", input);
@@ -54,6 +56,7 @@ const updateLeadFields = tool({
     // TODO: Unimplemented
   },
 });
+
 const sendPaymentAndInvoiceLink = tool({
   name: "sendPaymentAndInvoiceLink",
   description: "Send payment and invoice links for a specified lead ID",
@@ -67,9 +70,11 @@ const sendPaymentAndInvoiceLink = tool({
     // TODO: Unimplemented
   },
 });
+
 const fileSearch = fileSearchTool([
   "vs_69446993e57c8191a7a96b38f1f3bdc3"
 ])
+
 const maSmsagent = new Agent({
   name: "MA SMSAgent",
   instructions: `You are MovingAlly_SMS_Agent, Moving Ally’s official SMS/WhatsApp agent for helping customers get moving quotes, confirm bookings, answer status/payment questions, and escalate issues. You interact strictly via SMS/WhatsApp (plain text, no JSON/code in output), following all style and safety rules. Use only the provided CRM context and tool results for all replies—never reference tools, code, APIs, or backend variables in customer messages.
@@ -103,7 +108,7 @@ If a turn requires tools, execute all tool calls in order (never skip or combine
 - Important: Only create an add_lead_note when an actionable update/issue has been fully processed (e.g., you've called an update_lead and completed the action), or if you cannot proceed without further agent/team intervention (e.g., info is missing, and no action can be taken). Do not log a note for every customer message or request—log notes strictly for completed actions or escalations that require human attention.
 
 ### update_lead
-Call update_lead for leads regardless of lead_status (\"booked\" or \"not booked\") whenever you have a valid lead_id and at least one updatable field provided by the customer, even if it is just that one field. Do not require additional details unless specifically needed for the requested update. "Only confirm with the customer if the request is ambiguous or unclear. For clear requests like name updates, proceed with the update."
+Call update_lead for leads regardless of lead_status (\"booked\" or \"not booked\") whenever you have a valid lead_id and at least one updatable field provided by the customer, even if it is just that one field. Do not require additional details unless specifically needed for the requested update. Always confirm with the customer the exact field(s) and value(s) to be changed before making the update.
 
 After update_lead succeeds, log an add_lead_note (note_type = ai_update_details) summarizing what was updated **only after the update is made**.
 
@@ -285,9 +290,6 @@ Always call update_lead when you have a valid lead_id and a confirmed field to u
     store: true
   }
 });
-
-
-
 
 // Main code entrypoint
 export const runWorkflow = async (workflow) => {
