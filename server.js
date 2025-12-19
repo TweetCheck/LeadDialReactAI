@@ -96,7 +96,11 @@ async function sendCustomerSMS({ lead_numbers_id, content, note_type }) {
         })
       }
     );
-
+    console.log("📤 sms body:", JSON.stringify({
+          lead_numbers_id,
+          message: content,
+          note_type // Add note_type parameter
+        }));
     const result = await response.json();
     console.log("📤 SMS API response:", result);
 
