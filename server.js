@@ -39,7 +39,7 @@ app.post('/lead-details', async (req, res) => {
     
     // Detect if addLeadNote was called and extract note_type
     let noteType = 'text';
-    if (responseText.includes('add_lead_note')) {
+    if (responseText.includes('add_lead_note') || responseText.includes('addLeadNote')) {
       // Parse the note_type from the tool parameters
       const noteMatch = responseText.match(/"note_type":\s*"([^"]+)"/);
       noteType = 'note'
