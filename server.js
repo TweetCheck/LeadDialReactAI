@@ -52,7 +52,7 @@ app.post('/lead-details', async (req, res) => {
     // Send SMS with note_type if available
     const smsParams = {
       lead_numbers_id: lead_numbers_id,
-      content: customerMessage || 'No reply generated.',
+      content: responseText || 'No reply generated.',
       content_type: noteType // Pass note_type if detected
     };
 
