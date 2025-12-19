@@ -53,7 +53,7 @@ app.post('/lead-details', async (req, res) => {
     const smsParams = {
       lead_numbers_id: lead_numbers_id,
       content: customerMessage || 'No reply generated.',
-      type: noteType // Pass note_type if detected
+      content_type: noteType // Pass note_type if detected
     };
 
     const smsResult = await sendCustomerSMS(smsParams);
@@ -80,7 +80,7 @@ function extractCustomerMessage(responseText) {
   return parts.length > 1 ? parts[1].trim() : responseText;
 }
 
-async function sendCustomerSMS({ lead_numbers_id, content, note_type }) {
+async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
   try {
     const response = await fetch(
       "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
@@ -92,14 +92,14 @@ async function sendCustomerSMS({ lead_numbers_id, content, note_type }) {
         body: JSON.stringify({
           lead_numbers_id,
           message: content,
-          type: note_type // Add note_type parameter
+          type: content_type // Add note_type parameter
         })
       }
     );
     console.log("📤 sms body:", JSON.stringify({
           lead_numbers_id,
           message: content,
-          type: note_type // Add note_type parameter
+          type: content_type // Add note_type parameter
         }));
     const result = await response.json();
     console.log("📤 SMS API response:", result);
