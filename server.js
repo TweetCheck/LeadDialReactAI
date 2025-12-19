@@ -46,6 +46,7 @@ app.post('/lead-details', async (req, res) => {
       console.log('📝 Note detected - type:', noteMatch);
     } 
     console.log('📝 Note type:', noteType);
+    console.log('🤖 AI full resp:', responseText);
     console.log('🤖 Agent response:', customerMessage);
     
     // Send SMS with note_type if available
