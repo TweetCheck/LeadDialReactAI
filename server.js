@@ -30,6 +30,7 @@ app.post('/lead-details', async (req, res) => {
     const input_as_text = `${sms_content}`;
     console.log('📨 Lead received:', lead_id);
     console.log('🔧 Workflow input:', input_as_text);
+    
 
     const workflowContext = {
       lead_id,
@@ -44,7 +45,7 @@ app.post('/lead-details', async (req, res) => {
       payment_link,
       lead_staus
     };
-
+    console.log('🔧 Workflow Context:', workflowContext);
     const result = await runWorkflow({
       input_as_text,
       context: workflowContext
