@@ -19,7 +19,7 @@ app.post('/lead-details', async (req, res) => {
       lead_numbers_id,
       from_zip,
       to_zip,
-      move_size_id,
+      move_size,
       move_date,
       payment_link,
       lead_staus,
@@ -37,7 +37,7 @@ app.post('/lead-details', async (req, res) => {
       lead_numbers_id,
       from_zip,
       to_zip,
-      move_size_id,
+      move_size,
       move_date,
       payment_link,
       lead_staus
