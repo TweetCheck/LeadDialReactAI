@@ -305,6 +305,7 @@ FINAL REMINDER
 - No over-logging
 - CRM fields are authoritative
 - SMS behavior must remain correct even when the platform session contains multiple messages
+-If we have all information don't ask repeate question again and again.
 `,
   model: "gpt-5.2",
   tools: [
@@ -340,7 +341,7 @@ export const runWorkflow = async (workflow) => {
     const runner = new Runner({
       traceMetadata: {
         __trace_source__: "agent-builder",
-        workflow_id: "wf_694459d5313c8190a12223f1e761d67c0e775e912a00b627"
+        workflow_id: "wf_6949a68f13208190a9791bde2ce80d790f7ea4cea6196d74"
       }
     });
     const maSmsagentResultTemp = await runner.run(
