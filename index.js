@@ -330,7 +330,12 @@ export const runWorkflow = async (workflow) => {
 
     };
     const conversationHistory = [
-      { role: "user", content: [{ type: "input_text", text: workflow.input_as_text }] }
+      { 
+        role: "user", 
+        content: [
+          { type: "input_text", text: `CRM Context: ${JSON.stringify(workflow.context || {})}\n\nCustomer Message: ${workflow.input_as_text}` }
+        ] 
+      }
     ];
     const runner = new Runner({
       traceMetadata: {

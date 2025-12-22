@@ -26,12 +26,26 @@ app.post('/lead-details', async (req, res) => {
       sms_content
     } = req.body;
 
-    const input_as_text = `${sms_content} lead_id: ${lead_id} is ${lead_staus}, name: ${name}, email: ${email}, from_zip: ${from_zip}, to_zip ${to_zip}, move_size: ${move_size_id}, move_date: ${move_date}, lead_staus: ${lead_staus}, payment_link: ${payment_link}`;
+    const input_as_text = `${sms_content}`;
     console.log('📨 Lead received:', lead_id);
     console.log('🔧 Workflow input:', input_as_text);
 
+    const workflowContext = {
+      lead_id,
+      name,
+      email,
+      lead_numbers_id,
+      from_zip,
+      to_zip,
+      move_size_id,
+      move_date,
+      payment_link,
+      lead_staus
+    };
+
     const result = await runWorkflow({
-      input_as_text
+      input_as_text,
+      context: workflowContext
     });
 
     const responseText = result.response_text;
