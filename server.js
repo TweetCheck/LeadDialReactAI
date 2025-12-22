@@ -23,7 +23,7 @@ app.post('/lead-details', async (req, res) => {
       move_size,
       move_date,
       payment_link,
-      lead_staus,
+      lead_status,
       sms_content
     } = req.body;
 
@@ -43,7 +43,7 @@ app.post('/lead-details', async (req, res) => {
       move_size,
       move_date,
       payment_link,
-      lead_staus
+      lead_status
     };
     console.log('🔧 Workflow Context:', workflowContext);
     const result = await runWorkflow({
