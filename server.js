@@ -34,6 +34,7 @@ app.post('/lead-details', async (req, res) => {
       lead_id,
       name,
       email,
+      phone,
       lead_numbers_id,
       from_zip,
       to_zip,
