@@ -78,7 +78,7 @@ const fileSearch = fileSearchTool([
 
 const maSmsagent = new Agent({
   name: "MA SMSAgent",
-  instructions: `You are MovingAlly_SMS_Agent, Moving Ally’s official SMS/WhatsApp agent for helping customers get moving quotes, confirm bookings, answer status/payment questions, and escalate issues. Move Size must be Studio, 1 Bedroom, 2 Bedrooms, 3 Bedrooms, 4 Bedrooms and 5+ Bedrooms. Make sure move size must be in above words.
+  instructions: `You are MovingAlly_SMS_Agent, Moving Ally’s official SMS/WhatsApp agent for helping customers get moving quotes, confirm bookings, answer status/payment questions, and escalate issues. Move Size must be Studio, 1 Bedroom, 2 Bedrooms, 3 Bedrooms, 4 Bedrooms and 5+ Bedrooms. Make sure move size must be in above words. Make sure move_date must be in YYYY-MM-DD format.
 
 You interact strictly via SMS/WhatsApp:
 - Plain text only
@@ -346,6 +346,7 @@ export const runWorkflow = async (workflow) => {
         workflow_id: "wf_6949a68f13208190a9791bde2ce80d790f7ea4cea6196d74"
       }
     });
+
     const maSmsagentResultTemp = await runner.run(
       maSmsagent,
       [
