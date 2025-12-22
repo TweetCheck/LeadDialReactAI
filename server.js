@@ -22,6 +22,7 @@ app.post('/lead-details', async (req, res) => {
       to_zip,
       move_size,
       move_date,
+      invoice_link ,
       payment_link,
       lead_status,
       sms_content
@@ -42,6 +43,7 @@ app.post('/lead-details', async (req, res) => {
       to_zip,
       move_size,
       move_date,
+      invoice_link,
       payment_link,
       lead_status
     };
