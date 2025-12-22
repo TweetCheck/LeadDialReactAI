@@ -349,6 +349,7 @@ export const runWorkflow = async (workflow) => {
 
     const maSmsagentResultTemp = await runner.run(
       maSmsagent,
+      conversationHistory,
       [
         ...conversationHistory
       ]
