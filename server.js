@@ -1,9 +1,10 @@
-// Add at the very top of your server.js file
 process.env.OTEL_SDK_DISABLED = 'true';
-process.env.OPEN_TELEMETRY_ENABLED = 'false';
-
-// OR, if using @opentelemetry packages
 process.env.OTEL_TRACES_SAMPLER = 'always_off';
+process.env.OTEL_METRICS_EXPORTER = 'none';
+process.env.OTEL_LOGS_EXPORTER = 'none';
+
+// This is crucial - prevents auto-instrumentation from loading
+process.env.NODE_OPTIONS = (process.env.NODE_OPTIONS || '') + ' --no-node-snapshot';
 
 import express from 'express';
 import { runWorkflow,addLeadNote } from './index.js';
