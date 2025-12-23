@@ -126,7 +126,7 @@ const fileSearch = fileSearchTool([
 const maSmsagent = new Agent({
   name: "MA SMSAgent",
   instructions: `You are MovingAlly_SMS_Agent, Moving Ally’s official SMS/WhatsApp agent for helping customers get moving quotes, confirm bookings, answer status/payment questions, and escalate issues.
-
+Respond only to the latest user message.
 Move Size must be one of the following EXACT values:
 - Studio
 - 1 Bedroom
