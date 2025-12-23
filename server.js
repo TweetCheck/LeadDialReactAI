@@ -1,3 +1,10 @@
+// Add at the very top of your server.js file
+process.env.OTEL_SDK_DISABLED = 'true';
+process.env.OPEN_TELEMETRY_ENABLED = 'false';
+
+// OR, if using @opentelemetry packages
+process.env.OTEL_TRACES_SAMPLER = 'always_off';
+
 import express from 'express';
 import { runWorkflow,addLeadNote } from './index.js';
 import cors from 'cors';
@@ -100,7 +107,12 @@ function extractCustomerMessage(responseText) {
 }
 
 async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
+  const CONTROLLER_TIMEOUT_MS = 10000; // Timeout after 10 seconds
+
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CONTROLLER_TIMEOUT_MS);
+
     const response = await fetch(
       "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
       {
@@ -111,17 +123,28 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
         body: JSON.stringify({
           lead_numbers_id,
           message: content,
-          type: content_type // Add note_type parameter
-        })
+          type: content_type
+        }),
+        signal: controller.signal // Add the abort signal
       }
     );
+
+    clearTimeout(timeoutId); // Clear the timeout if the request succeeds
     const result = await response.json();
     console.log("📤 SMS API response:", result);
-
     return { success: true, result };
+
   } catch (error) {
-    console.error("❌ Failed to send SMS:", error);
-    return { success: false, error: error.message };
+    if (error.name === 'AbortError') {
+      console.error(`❌ SMS request timed out after ${CONTROLLER_TIMEOUT_MS}ms`);
+      return { 
+        success: false, 
+        error: `Request to SMS API timed out after ${CONTROLLER_TIMEOUT_MS}ms` 
+      };
+    } else {
+      console.error("❌ Failed to send SMS:", error);
+      return { success: false, error: error.message };
+    }
   }
 }
 
