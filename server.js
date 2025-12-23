@@ -22,6 +22,7 @@ app.post('/lead-details', async (req, res) => {
 
     const {
       lead_id,
+      booking_id,
       name,
       email,
       phone,
@@ -43,6 +44,7 @@ app.post('/lead-details', async (req, res) => {
 
     const workflowContext = {
       lead_id,
+      booking_id,
       name,
       email,
       phone,
