@@ -8,91 +8,91 @@ app.use(express.json());
 
 // ✅ FIXED: Remove process.env.API_URL from route path
 // Just use '/lead-details' 
-// app.post('/lead-details', async (req, res) => {
-//   try {
-//     const leadData = req.body;
+app.post('/lead-details', async (req, res) => {
+  try {
+    const leadData = req.body;
 
-//     const {
-//       lead_id,
-//       name,
-//       email,
-//       phone,
-//       lead_numbers_id,
-//       from_zip,
-//       to_zip,
-//       move_size,
-//       move_date,
-//       invoice_link ,
-//       payment_link,
-//       lead_status,
-//       sms_content
-//     } = req.body;
+    const {
+      lead_id,
+      name,
+      email,
+      phone,
+      lead_numbers_id,
+      from_zip,
+      to_zip,
+      move_size,
+      move_date,
+      invoice_link ,
+      payment_link,
+      lead_status,
+      sms_content
+    } = req.body;
 
-//     const input_as_text = `${sms_content}`;
-//     console.log('📨 Lead received:', lead_id);
-//     console.log('🔧 Workflow input:', input_as_text);
+    const input_as_text = `${sms_content}`;
+    //console.log('📨 Lead received:', lead_id);
+    //console.log('🔧 Workflow input:', input_as_text);
     
 
-//     const workflowContext = {
-//       lead_id,
-//       name,
-//       email,
-//       phone,
-//       lead_numbers_id,
-//       from_zip,
-//       to_zip,
-//       move_size,
-//       move_date,
-//       invoice_link,
-//       payment_link,
-//       lead_status
-//     };
-//     console.log('🔧 Workflow Context:', workflowContext);
-//     const result = await runWorkflow({
-//       input_as_text,
-//       context: workflowContext
-//     });
+    const workflowContext = {
+      lead_id,
+      name,
+      email,
+      phone,
+      lead_numbers_id,
+      from_zip,
+      to_zip,
+      move_size,
+      move_date,
+      invoice_link,
+      payment_link,
+      lead_status
+    };
+    console.log('🔧 Workflow Context:', workflowContext);
+    const result = await runWorkflow({
+      input_as_text,
+      context: workflowContext
+    });
 
-//     const responseText = result.response_text;
-//     const customerMessage = extractCustomerMessage(responseText);
+    const responseText = result.response_text;
+    const customerMessage = extractCustomerMessage(responseText);
     
-//     // Detect if addLeadNote was called and extract note_type
-//     let noteType = 'text';
-//     if (responseText.includes('add_lead_note') || responseText.includes('addLeadNote')) {
-//       // Parse the note_type from the tool parameters
-//       const noteMatch = responseText.match(/"note_type":\s*"([^"]+)"/);
-//       noteType = 'note'
-//       console.log('📝 Note detected - type:', noteMatch);
-//     } 
-//     console.log('📝 Note type:', noteType);
-//     console.log('🤖 AI full resp:', responseText);
-//     console.log('🤖 Agent response:', customerMessage);
+    // Detect if addLeadNote was called and extract note_type
+    let noteType = 'text';
+    if (responseText.includes('add_lead_note') || responseText.includes('addLeadNote')) {
+      // Parse the note_type from the tool parameters
+      const noteMatch = responseText.match(/"note_type":\s*"([^"]+)"/);
+      noteType = 'note'
+      //console.log('📝 Note detected - type:', noteMatch);
+    } 
+    console.log('📝 Note type:', noteType);
+    console.log('🤖 AI full resp:', responseText);
+    console.log('🤖 Agent response:', customerMessage);
     
-//     // Send SMS with note_type if available
-//     const smsParams = {
-//       lead_numbers_id: lead_numbers_id,
-//       content: responseText || 'No reply generated.',
-//       content_type: noteType // Pass note_type if detected
-//     };
+    // Send SMS with note_type if available
+    const smsParams = {
+      lead_numbers_id: lead_numbers_id,
+      content: responseText || 'No reply generated.',
+      content_type: noteType // Pass note_type if detected
+    };
 
-//     const smsResult = await sendCustomerSMS(smsParams);
+    const smsResult = await sendCustomerSMS(smsParams);
 
-//     res.status(200).json({
-//       success: true,
-//       message: 'Lead processed successfully',
-//       data: leadData,
-//       sdk_result: { response_text: result.response_text },
-//       sms_result: smsResult
-//     });
+    res.status(200).json({
+      success: true,
+      message: 'Lead processed successfully',
+      data: leadData,
+      sdk_result: { response_text: result.response_text },
+      sms_result: smsResult
+    });
 
-//   } catch (error) {
-//     console.error('❌ Error:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: error.message
-//     });
-//   }
-// });
+  } catch (error) {
+    console.error('❌ Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
 
 function extractCustomerMessage(responseText) {
   const parts = responseText.split('Customer Message:');
