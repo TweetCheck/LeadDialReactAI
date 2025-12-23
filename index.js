@@ -44,25 +44,63 @@ const updateLeadFields = tool({
   execute: async (input) => {
     console.log("Lead fields updated:", input);
 
-     try {
+    try {
       const response = await fetch("https://developer.leaddial.co/developer/api/tenant/lead/update-customer-info", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          //"Authorization": `Bearer ${process.env.EXTERNAL_API_TOKEN}` // optional
+          // Add authorization if required
+          // "Authorization": `Bearer ${process.env.EXTERNAL_API_TOKEN}`
         },
         body: JSON.stringify(input)
       });
 
-      const result = await response.json();
+      // First, get the raw text to see what's actually returned
+      const responseText = await response.text();
+      
+      console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+      console.log("Raw response (first 500 chars):", responseText.substring(0, 500));
+      
+      let result;
+      try {
+        // Try to parse as JSON
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse JSON. Response appears to be HTML/error page.");
+        console.error("Full response:", responseText);
+        
+        // Return structured error info
+        return { 
+          success: false, 
+          error: "API returned non-JSON response", 
+          status: response.status,
+          message: "Received HTML/error page instead of JSON"
+        };
+      }
+      
       console.log("External API response:", result);
-
-      return { success: true };
+      
+      // Check if the API indicates failure
+      if (!response.ok) {
+        return { 
+          success: false, 
+          error: result.error || "API request failed", 
+          status: response.status,
+          data: result 
+        };
+      }
+      
+      return { success: true, data: result };
+      
     } catch (error) {
-      console.error("Failed to send lead note:", error);
-      return { success: false };
+      console.error("Failed to send lead update:", error);
+      return { 
+        success: false, 
+        error: error.message,
+        details: "Network or server error" 
+      };
     }
-    // TODO: Unimplemented
   },
 });
 
