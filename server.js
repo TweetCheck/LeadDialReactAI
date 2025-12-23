@@ -13,7 +13,7 @@ import cors from 'cors';
 const app = express();
 app.use(cors());
 app.use(express.json());
-
+//
 // ✅ FIXED: Remove process.env.API_URL from route path
 // Just use '/lead-details' 
 // app.post('/lead-details', async (req, res) => {
