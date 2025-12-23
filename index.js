@@ -104,16 +104,28 @@ const updateLeadFields = tool({
   },
 });
 
-const sendPaymentAndInvoiceLink = tool({
-  name: "sendPaymentAndInvoiceLink",
-  description: "Send payment and invoice links for a specified lead ID",
+const sendPaymentLink = tool({
+  name: "sendPaymentLink",
+  description: "Send a payment link to the customer for a lead",
   parameters: z.object({
     lead_id: z.string(),
-    payment_link: z.string(),
+    payment_link: z.string()
+  }),
+  execute: async (input) => {
+    console.log("Payment link sent:", input);
+    // TODO: Unimplemented
+  },
+});
+
+const sendInvoiceLink = tool({
+  name: "sendInvoiceLink",
+  description: "Send an invoice link to the customer for a booked lead",
+  parameters: z.object({
+    lead_id: z.string(),
     invoice_link: z.string()
   }),
   execute: async (input) => {
-    console.log("Payment/Invoice link sent:", input);
+    console.log("Invoice link sent:", input); 
     // TODO: Unimplemented
   },
 });
@@ -379,7 +391,8 @@ FINAL REMINDER
   tools: [
     addLeadNote,
     updateLeadFields,
-    sendPaymentAndInvoiceLink,
+    sendPaymentLink,
+    sendInvoiceLink,
     fileSearch
   ],
   modelSettings: {
@@ -475,4 +488,4 @@ export const runWorkflow = async (workflow) => {
   }
 };
 
-export { addLeadNote, maSmsagent, updateLeadFields, sendPaymentAndInvoiceLink, fileSearch };
+export { addLeadNote, maSmsagent, updateLeadFields, sendPaymentLink, sendInvoiceLink, fileSearch };
