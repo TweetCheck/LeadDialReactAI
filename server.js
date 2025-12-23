@@ -108,7 +108,7 @@ function extractCustomerMessage(responseText) {
 }
 
 async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
-  const CONTROLLER_TIMEOUT_MS = 17000; // Timeout after 17 seconds
+  const CONTROLLER_TIMEOUT_MS = 20000; // Timeout after 20 seconds
 
   try {
     const controller = new AbortController();

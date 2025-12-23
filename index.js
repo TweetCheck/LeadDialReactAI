@@ -1,3 +1,12 @@
+process.env.OTEL_SDK_DISABLED = 'true';
+process.env.OTEL_TRACES_SAMPLER = 'always_off';
+process.env.OPENAI_AGENTS_DISABLE_TELEMETRY = 'true';
+
+// Prevent any telemetry loading
+if (typeof process.env.NODE_OPTIONS === 'undefined') {
+  process.env.NODE_OPTIONS = '--no-node-snapshot';
+}
+
 import 'dotenv/config';
 import { tool, fileSearchTool, Agent, Runner, withTrace } from "@openai/agents";
 import { z } from "zod";
@@ -327,47 +336,83 @@ FINAL REMINDER
 });
 
 // Main code entrypoint
+// In index.js - modify runWorkflow to format properly
 export const runWorkflow = async (workflow) => {
-  return await withTrace("MA Agent Varun", async () => {
-    const state = {
-
-    };
+  console.log(`[runWorkflow] Starting for lead ${workflow.context?.lead_id || 'unknown'}`);
+  
+  const WORKFLOW_TIMEOUT_MS = 30000; // 30 seconds
+  
+  try {
     const conversationHistory = [
       { 
         role: "user", 
         content: [
-          { type: "input_text", text: `CRM Context: ${JSON.stringify(workflow.context || {})}\n\nCustomer Message: ${workflow.input_as_text}` }
+          { 
+            type: "input_text", 
+            text: `CRM Context: ${JSON.stringify(workflow.context || {})}\n\nCustomer Message: ${workflow.input_as_text}`
+          }
         ] 
       }
     ];
-    const runner = new Runner({
-      traceMetadata: {
-        __trace_source__: "agent-builder",
-        workflow_id: "wf_6949a68f13208190a9791bde2ce80d790f7ea4cea6196d74"
-      }
+    
+    const runner = new Runner();
+    
+    // ⭐ ADD TIMEOUT
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Workflow timeout after ${WORKFLOW_TIMEOUT_MS}ms`));
+      }, WORKFLOW_TIMEOUT_MS);
     });
-
-    const maSmsagentResultTemp = await runner.run(
-      maSmsagent,
-      conversationHistory,
-      [
-        ...conversationHistory
-      ]
-    );
-    conversationHistory.push(...maSmsagentResultTemp.newItems.map((item) => item.rawItem));
-
-    if (!maSmsagentResultTemp.finalOutput) {
-        throw new Error("Agent result is undefined");
+    
+    const maSmsagentResultTemp = await Promise.race([
+      runner.run(maSmsagent, conversationHistory, [...conversationHistory]),
+      timeoutPromise
+    ]);
+    
+    if (!maSmsagentResultTemp?.finalOutput) {
+      throw new Error("Agent returned no output");
     }
-
-    const maSmsagentResult = {
-      output_text: maSmsagentResultTemp.finalOutput ?? ""
+    
+    let finalOutput = maSmsagentResultTemp.finalOutput;
+    
+    // ⭐ CLEAN UP THE OUTPUT
+    // 1. Remove duplicate JSON if present
+    const jsonMatches = finalOutput.match(/\{[^}]*\}/g);
+    if (jsonMatches && jsonMatches.length > 1) {
+      // Keep only unique JSON objects
+      const uniqueJson = [...new Set(jsonMatches)];
+      const nonJsonParts = finalOutput.split(/\{[^}]*\}/g).filter(p => p.trim());
+      
+      // Reconstruct with unique JSON + text
+      finalOutput = uniqueJson.join('\n') + '\n' + nonJsonParts.join('\n');
+    }
+    
+    // 2. Ensure proper format
+    if (!finalOutput.includes('Customer Message:')) {
+      // Add Customer Message: prefix if missing
+      const lines = finalOutput.split('\n');
+      const lastLine = lines[lines.length - 1];
+      
+      if (!lastLine.includes('{') && !lastLine.includes('lead_id')) {
+        // This looks like a customer message
+        finalOutput = finalOutput.replace(lastLine, `Customer Message: ${lastLine}`);
+      }
+    }
+    
+    console.log(`[runWorkflow] ✅ Completed`);
+    
+    return {
+      response_text: finalOutput
     };
-    const endResult = {
-      response_text: maSmsagentResult.output_text
+    
+  } catch (error) {
+    console.error(`[runWorkflow] ❌ Error:`, error.message);
+    
+    // Return fallback that won't confuse the customer
+    return {
+      response_text: `NO TOOL CALL NEEDED\n\nCustomer Message: I've received your message and will process it shortly.`
     };
-    return endResult;
-  });
-}
+  }
+};
 
 export { addLeadNote, maSmsagent, updateLeadFields, sendPaymentAndInvoiceLink, fileSearch };
