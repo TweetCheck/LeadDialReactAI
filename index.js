@@ -28,7 +28,6 @@ const addLeadNote = tool({
   },
 });
 
-
 const updateLeadFields = tool({
   name: "updateLeadFields",
   description: "Update fields of a lead using its lead ID; only lead ID is required, other fields are optional and can be updated or inserted if not present.",
@@ -171,6 +170,10 @@ NEVER:
 Every tool call MUST explicitly include the tool name.
 Tool calls without a tool name are INVALID and must NEVER be produced.
 
+
+IMPORTANT:
+After a tool executes successfully, you MUST send a confirmation SMS
+based on the tool’s returned result.
 --------------------------------------------------
 PAYMENT vs INVOICE (STRICT SEPARATION)
 --------------------------------------------------
@@ -278,7 +281,7 @@ Customer Message:
   }
 });
 
-//work
+// work
 // Main code entrypoint
 // In index.js - modify runWorkflow to format properly
 export const runWorkflow = async (workflow) => {
