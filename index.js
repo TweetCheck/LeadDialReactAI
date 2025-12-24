@@ -168,6 +168,9 @@ NEVER:
 - Narrate actions
 - Delay execution
 
+Every tool call MUST explicitly include the tool name.
+Tool calls without a tool name are INVALID and must NEVER be produced.
+
 --------------------------------------------------
 PAYMENT vs INVOICE (STRICT SEPARATION)
 --------------------------------------------------
