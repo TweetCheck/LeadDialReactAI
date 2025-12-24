@@ -316,30 +316,6 @@ export const runWorkflow = async (workflow) => {
     
     let finalOutput = maSmsagentResultTemp.finalOutput;
     
-    // ⭐ CLEAN UP THE OUTPUT
-    // 1. Remove duplicate JSON if present
-    const jsonMatches = finalOutput.match(/\{[^}]*\}/g);
-    if (jsonMatches && jsonMatches.length > 1) {
-      // Keep only unique JSON objects
-      const uniqueJson = [...new Set(jsonMatches)];
-      const nonJsonParts = finalOutput.split(/\{[^}]*\}/g).filter(p => p.trim());
-      
-      // Reconstruct with unique JSON + text
-      finalOutput = uniqueJson.join('\n') + '\n' + nonJsonParts.join('\n');
-    }
-    
-    // 2. Ensure proper format
-    if (!finalOutput.includes('Customer Message:')) {
-      // Add Customer Message: prefix if missing
-      const lines = finalOutput.split('\n');
-      const lastLine = lines[lines.length - 1];
-      
-      if (!lastLine.includes('{') && !lastLine.includes('lead_id')) {
-        // This looks like a customer message
-        finalOutput = finalOutput.replace(lastLine, `Customer Message: ${lastLine}`);
-      }
-    }
-    
     console.log(`[runWorkflow] ✅ Completed`);
     
     return {
