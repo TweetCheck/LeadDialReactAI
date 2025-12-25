@@ -169,19 +169,6 @@ NEVER:
 - Narrate actions
 - Delay execution
 
-Every tool call MUST explicitly include the tool name.
-Tool calls without a tool name are INVALID and must NEVER be produced.
-
-IMPORTANT:
-After a tool executes successfully AND a result is returned to you,
-you MUST send a confirmation SMS based on the tool’s returned result.   // PATCH
-
-If a tool executes but NO result is returned to you,
-you MUST NOT assume success and MUST NOT send a confirmation message.   // PATCH
-
-You MUST NEVER attempt to call more than ONE tool in a single turn.
-If an action tool is called, logging must happen in the following turn
-after the tool returns a success result.
 --------------------------------------------------
 PAYMENT vs INVOICE (STRICT SEPARATION)
 --------------------------------------------------
@@ -289,6 +276,7 @@ Customer Message:
     store: true
   }
 });
+
 
 
 // work
