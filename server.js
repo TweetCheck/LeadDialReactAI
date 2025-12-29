@@ -33,6 +33,7 @@ app.post('/lead-details', async (req, res) => {
       move_date,
       invoice_link ,
       payment_link,
+      inventory_link,
       lead_status,
       sms_content
     } = req.body;
@@ -54,6 +55,7 @@ app.post('/lead-details', async (req, res) => {
       move_date,
       invoice_link,
       payment_link,
+      inventory_link,
       lead_status
     };
     console.log('🔧 Workflow Context:', workflowContext);
