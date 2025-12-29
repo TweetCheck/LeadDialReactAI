@@ -24,6 +24,7 @@ const addLeadNote = tool({
   }),
   execute: async (input) => {
     console.log("Note added:", input);
+    return { success: true, data: input };
     // TODO: Unimplemented
   },
 });
@@ -112,6 +113,7 @@ const sendPaymentLink = tool({
   }),
   execute: async (input) => {
     console.log("Payment link sent:", input);
+    return { success: true, data: input };
     // TODO: Unimplemented
   },
 });
@@ -137,6 +139,7 @@ const sendInventoryLink = tool({
   }),
   execute: async (input) => {
     console.log("Inventory link sent:", input);
+    return { success: true, data: input };
     // TODO: Unimplemented
   },
 });
