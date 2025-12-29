@@ -113,7 +113,7 @@ const sendPaymentLink = tool({
   }),
   execute: async (input) => {
     console.log("Payment link sent:", input);
-    return { success: true, data: input };
+    return { success: true, payment_link: input.payment_link, formatted_for_customer: `Here is your payment link: ${input.payment_link}`, instruction: "Include this exact link in your response" };
     // TODO: Unimplemented
   },
 });
@@ -127,7 +127,7 @@ const sendInvoiceLink = tool({
   }),
   execute: async (input) => {
     console.log("Invoice link sent:", input); 
-    return { success: true, data: input };
+    return { success: true, invoice_link: input.invoice_link,  formatted_for_customer: `Here is your invoice: ${input.invoice_link}`, instruction: "Include this exact link in your response" };
     // TODO: Unimplemented
   },
 });
