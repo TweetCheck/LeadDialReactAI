@@ -127,6 +127,7 @@ const sendInvoiceLink = tool({
   }),
   execute: async (input) => {
     console.log("Invoice link sent:", input); 
+    return { success: true, data: input };
     // TODO: Unimplemented
   },
 });
@@ -147,7 +148,6 @@ const sendInventoryLink = tool({
 const fileSearch = fileSearchTool([
   "vs_69446993e57c8191a7a96b38f1f3bdc3"
 ])
-
 
 const maSmsagent = new Agent({
   name: "MA SMSAgent",
