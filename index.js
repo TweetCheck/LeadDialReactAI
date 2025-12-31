@@ -34,7 +34,7 @@ const addLeadNote = tool({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          lead_numbers_id,
+          lead_numbers_id: input.lead_numbers_id,
           message: input.content,
           type: 'note'
         })
