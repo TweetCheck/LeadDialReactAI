@@ -11,7 +11,7 @@ import 'dotenv/config';
 import { tool, fileSearchTool, Agent, Runner, withTrace } from "@openai/agents";
 import { z } from "zod";
 
-
+let callCount = 0;
 // Tool definitions
 const addLeadNote = tool({
   name: "addLeadNote",
@@ -24,8 +24,10 @@ const addLeadNote = tool({
     content: z.string()
   }),
   execute: async (input) => {
+    callCount++;
     console.log("Note added:", input);
-
+    
+    if (callCount > 1) {
     const response = await fetch(
       "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
       {
@@ -43,6 +45,7 @@ const addLeadNote = tool({
 
     const result = await response.json();
     console.log("📤 SMS API response:", result);
+  }
     return { success: true, data: input };
     // TODO: Unimplemented
   },
