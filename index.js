@@ -13,9 +13,10 @@ import { z } from "zod";
 
 
 // Tool definitions
+let callCount = 0;
 const addLeadNote = tool({
   name: "addLeadNote",
-  description: "Add a short, structured note to the lead’s record based on the SMS conversation without changing lead or booking fields.",
+  description: "Add a short, structured note to the lead's record based on the SMS conversation without changing lead or booking fields.",
   parameters: z.object({
     lead_id: z.number(),
     lead_numbers_id: z.number(),
@@ -24,6 +25,18 @@ const addLeadNote = tool({
     content: z.string()
   }),
   execute: async (input) => {
+    callCount++;
+    console.log(`🔢 Call #${callCount} to addLeadNote`);
+    console.log("📝 Note content:", input.content);
+    
+    // Log stack trace to see who's calling
+    if (callCount > 1) {
+      console.trace("📞 Multiple calls detected from:");
+    }
+    
+    // Add delay to see if calls are simultaneous
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     console.log("Note added:", input);
 
     const response = await fetch(
@@ -44,7 +57,6 @@ const addLeadNote = tool({
     const result = await response.json();
     console.log("📤 SMS response:", result);
     return { success: true, data: input };
-    // TODO: Unimplemented
   },
 });
 
