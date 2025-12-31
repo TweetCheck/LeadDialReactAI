@@ -18,12 +18,31 @@ const addLeadNote = tool({
   description: "Add a short, structured note to the lead’s record based on the SMS conversation without changing lead or booking fields.",
   parameters: z.object({
     lead_id: z.number(),
+    lead_numbers_id: z.number(),
     note_type: z.string(),
     channel: z.string(),
     content: z.string()
   }),
   execute: async (input) => {
     console.log("Note added:", input);
+
+    const response = await fetch(
+      "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lead_numbers_id,
+          message: input.content,
+          type: 'note'
+        })
+      }
+    );
+
+    const result = await response.json();
+    console.log("📤 SMS API response:", result);
     return { success: true, data: input };
     // TODO: Unimplemented
   },

@@ -45,6 +45,7 @@ app.post('/lead-details', async (req, res) => {
 
     const workflowContext = {
       lead_id,
+      lead_numbers_id,
       booking_id,
       name,
       email,
@@ -63,27 +64,13 @@ app.post('/lead-details', async (req, res) => {
       input_as_text,
       context: workflowContext
     });
-
-    const responseText = result.response_text;
-    const customerMessage = extractCustomerMessage(responseText);
-    
-    // Detect if addLeadNote was called and extract note_type
-    let noteType = 'text';
-    if (responseText.includes('add_lead_note') || responseText.includes('addLeadNote')) {
-      // Parse the note_type from the tool parameters
-      const noteMatch = responseText.match(/"note_type":\s*"([^"]+)"/);
-      noteType = 'note'
-      //console.log('📝 Note detected - type:', noteMatch);
-    } 
-    console.log('📝 Note type:', noteType);
-    console.log('🤖 AI full resp:', responseText);
-    console.log('🤖 Agent response:', customerMessage);
+    console.log('🤖 Workflow result:', result);
     
     // Send SMS with note_type if available
     const smsParams = {
       lead_numbers_id: lead_numbers_id,
       content: responseText || 'No reply generated.',
-      content_type: noteType // Pass note_type if detected
+      content_type: 'text' // Pass note_type if detected
     };
 
     const smsResult = await sendCustomerSMS(smsParams);
@@ -105,10 +92,6 @@ app.post('/lead-details', async (req, res) => {
   }
 });
 
-function extractCustomerMessage(responseText) {
-  const parts = responseText.split('Customer Message:');
-  return parts.length > 1 ? parts[1].trim() : responseText;
-}
 
 async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
   const CONTROLLER_TIMEOUT_MS = 20000; // Timeout after 20 seconds
