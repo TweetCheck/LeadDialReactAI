@@ -14,10 +14,9 @@ import { z } from "zod";
 
 // Tool definitions
 let callCount = 0;
-let hasLoggedNote = false;
 const addLeadNote = tool({
   name: "addLeadNote",
-  description: "Add a short, structured note to the lead's record based on the SMS conversation without changing lead or booking fields. CRITICAL: Only call this ONCE per conversation to summarize the outcome.",
+  description: "Add a short, structured note to the lead's record based on the SMS conversation without changing lead or booking fields.",
   parameters: z.object({
     lead_id: z.number(),
     lead_numbers_id: z.number(),
@@ -26,21 +25,14 @@ const addLeadNote = tool({
     content: z.string()
   }),
   execute: async (input) => {
-    // ⛔ THE FIX: If we already logged a note, stop immediately.
-    if (hasLoggedNote) {
-      console.warn("🚫 BLOCKED: addLeadNote called multiple times. Ignoring this call.");
-      return { success: false, reason: "Duplicate note blocked by system guard" };
-    }
-
-    // Set the flag so we know a note has been sent
-    hasLoggedNote = true; 
-
     callCount++;
-    console.log(`🔢 Call #${callCount} to addLeadNote (Allowed)`);
+    console.log(`🔢 Call #${callCount} to addLeadNote`);
     console.log("📝 Note content:", input.content);
     
-    // Log stack trace only if something went wrong (optional)
-    // if (callCount > 1) { console.trace("📞 Multiple calls detected from:"); }
+    // Log stack trace to see who's calling
+    if (callCount > 1) {
+      console.trace("📞 Multiple calls detected from:");
+    }
     
     // Add delay to see if calls are simultaneous
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -56,7 +48,7 @@ const addLeadNote = tool({
         },
         body: JSON.stringify({
           lead_numbers_id: input.lead_numbers_id,
-          message: input.content, // ⚠️ SEE WARNING BELOW
+          message: input.content,
           type: 'note'
         })
       }
@@ -435,7 +427,7 @@ You are FORBIDDEN from:
 // In index.js - modify runWorkflow to format properly
 export const runWorkflow = async (workflow) => {
   console.log(`[runWorkflow] Starting for lead ${workflow.context?.lead_id || 'unknown'}`);
-  hasLoggedNote = false;
+  
   const WORKFLOW_TIMEOUT_MS = 30000; // 30 seconds
   
   try {
