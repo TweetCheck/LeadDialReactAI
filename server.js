@@ -13,6 +13,7 @@ import cors from 'cors';
 const app = express();
 app.use(cors());
 app.use(express.json());
+let apiUrl = process.env.API_URL || '';
 //
 // ✅ FIXED: Remove process.env.API_URL from route path
 // Just use '/lead-details' 
@@ -101,7 +102,7 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
     const timeoutId = setTimeout(() => controller.abort(), CONTROLLER_TIMEOUT_MS);
 
     const response = await fetch(
-      "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
+      `${apiUrl}/developer/api/tenant/lead/send-customer-sms`,
       {
         method: "POST",
         headers: {

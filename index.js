@@ -15,6 +15,7 @@ import { z } from "zod";
 // Tool definitions
 let callCount = 0;
 let hasLoggedNote = false;
+let apiUrl = process.env.API_URL || '';
 const addLeadNote = tool({
   name: "addLeadNote",
   description: "Add a short, structured note to the lead's record based on the SMS conversation without changing lead or booking fields. CRITICAL: Only call this ONCE per conversation to summarize the outcome.",
@@ -48,7 +49,7 @@ const addLeadNote = tool({
     console.log("Note added:", input);
 
     const response = await fetch(
-      "https://developer.leaddial.co/developer/api/tenant/lead/send-customer-sms",
+      `${apiUrl}/developer/api/tenant/lead/send-customer-sms`,
       {
         method: "POST",
         headers: {
@@ -84,7 +85,7 @@ const updateLeadFields = tool({
     console.log("Lead fields updated:", input);
 
     try {
-      const response = await fetch("https://developer.leaddial.co/developer/api/tenant/lead/update-customer-info", {
+      const response = await fetch(`${apiUrl}/developer/api/tenant/lead/update-customer-info`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
