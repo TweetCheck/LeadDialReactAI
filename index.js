@@ -49,7 +49,7 @@ const addLeadNote = tool({
     console.log("Note added:", input);
 
     const response = await fetch(
-      `${apiUrl}/developer/api/tenant/lead/send-customer-sms`,
+      `${apiUrl}/api/tenant/lead/send-customer-sms`,
       {
         method: "POST",
         headers: {
@@ -85,7 +85,7 @@ const updateLeadFields = tool({
     console.log("Lead fields updated:", input);
 
     try {
-      const response = await fetch(`${apiUrl}/developer/api/tenant/lead/update-customer-info`, {
+      const response = await fetch(`${apiUrl}/api/tenant/lead/update-customer-info`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

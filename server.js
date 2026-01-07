@@ -102,7 +102,7 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
     const timeoutId = setTimeout(() => controller.abort(), CONTROLLER_TIMEOUT_MS);
 
     const response = await fetch(
-      `${apiUrl}/developer/api/tenant/lead/send-customer-sms`,
+      `${apiUrl}/api/tenant/lead/send-customer-sms`,
       {
         method: "POST",
         headers: {
