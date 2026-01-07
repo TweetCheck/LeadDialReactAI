@@ -44,7 +44,6 @@ const addLeadNote = tool({
     // if (callCount > 1) { console.trace("📞 Multiple calls detected from:"); }
     
     // Add delay to see if calls are simultaneous
-    await new Promise(resolve => setTimeout(resolve, 100));
     
     console.log("Note added:", input);
 
