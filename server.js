@@ -71,7 +71,7 @@ app.post('/lead-details', async (req, res) => {
     const smsParams = {
       lead_numbers_id: lead_numbers_id,
       content: result.response_text || 'No reply generated.',
-      content_type: 'text' // Pass note_type if detected
+      content_type: 'text'
     };
 
     const smsResult = await sendCustomerSMS(smsParams);
@@ -111,7 +111,8 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
         body: JSON.stringify({
           lead_numbers_id,
           message: content,
-          type: content_type
+          type: content_type,
+          com_type: 'sms' // Ensure com_type is set to 'sms'
         }),
         signal: controller.signal // Add the abort signal
       }

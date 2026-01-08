@@ -57,7 +57,8 @@ const addLeadNote = tool({
         body: JSON.stringify({
           lead_numbers_id: input.lead_numbers_id,
           message: input.content, // ⚠️ SEE WARNING BELOW
-          type: 'note'
+          type: 'note',
+          com_type: 'sms'
         })
       }
     );
