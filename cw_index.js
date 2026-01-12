@@ -509,7 +509,7 @@ Return only the message.
 
 
 // Main code entrypoint
-export const runWorkflow = async (workflow) => {
+export const runWorkflowCw = async (workflow) => {
   return await withTrace("Countrywide SMS Stage", async () => {
     const state = {
 

@@ -8,12 +8,14 @@ process.env.NODE_OPTIONS = (process.env.NODE_OPTIONS || '') + ' --no-node-snapsh
 
 import express from 'express';
 import { runWorkflow,addLeadNote } from './index.js';
+import { runWorkflowCw } from './cw_index.js';
 import cors from 'cors';
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 let apiUrl = process.env.API_URL || '';
+let cwApiUrl = process.env.CW_API_URL || '';
 //
 // ✅ FIXED: Remove process.env.API_URL from route path
 // Just use '/lead-details' 
@@ -71,7 +73,8 @@ app.post('/lead-details', async (req, res) => {
     const smsParams = {
       lead_numbers_id: lead_numbers_id,
       content: result.response_text || 'No reply generated.',
-      content_type: 'text'
+      content_type: 'text',
+      sms_url: apiUrl
     };
 
     const smsResult = await sendCustomerSMS(smsParams);
@@ -94,7 +97,85 @@ app.post('/lead-details', async (req, res) => {
 });
 
 
-async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
+app.post('/cw-lead-details', async (req, res) => {
+  try {
+    const leadData = req.body;
+
+    const {
+      lead_id,
+      booking_id,
+      name,
+      email,
+      phone,
+      lead_numbers_id,
+      from_zip,
+      to_zip,
+      move_size,
+      move_date,
+      invoice_link ,
+      payment_link,
+      inventory_link,
+      lead_status,
+      sms_content
+    } = req.body;
+
+    const input_as_text = `${sms_content}`;
+    //console.log('📨 Lead received:', lead_id);
+    //console.log('🔧 Workflow input:', input_as_text);
+    
+
+    const workflowContext = {
+      lead_id,
+      lead_numbers_id,
+      booking_id,
+      name,
+      email,
+      phone,
+      from_zip,
+      to_zip,
+      move_size,
+      move_date,
+      invoice_link,
+      payment_link,
+      inventory_link,
+      lead_status
+    };
+    console.log('🔧 Workflow Context:', workflowContext);
+    const result = await runWorkflowCw({
+      input_as_text,
+      context: workflowContext
+    });
+    console.log('🤖 Workflow result:', result);
+    
+    // Send SMS with note_type if available
+    const smsParams = {
+      lead_numbers_id: lead_numbers_id,
+      content: result.response_text || 'No reply generated.',
+      content_type: 'text',
+      sms_url: cwApiUrl
+    };
+
+    const smsResult = await sendCustomerSMS(smsParams);
+
+    res.status(200).json({
+      success: true,
+      message: 'Lead processed successfully',
+      data: leadData,
+      sdk_result: { response_text: result.response_text },
+      sms_result: smsResult
+    });
+
+  } catch (error) {
+    console.error('❌ Error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+
+async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url }) {
   const CONTROLLER_TIMEOUT_MS = 20000; // Timeout after 20 seconds
 
   try {
@@ -102,7 +183,7 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type }) {
     const timeoutId = setTimeout(() => controller.abort(), CONTROLLER_TIMEOUT_MS);
 
     const response = await fetch(
-      `${apiUrl}/api/tenant/lead/send-customer-sms`,
+      `${sms_url}/api/tenant/lead/send-customer-sms`,
       {
         method: "POST",
         headers: {
@@ -150,7 +231,7 @@ app.get('/health', (req, res) => {
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({
-    message: 'Lead Dial API Server',
+    message: 'Lead Dial MCP Server',
     endpoints: {
       'POST /lead-details': 'Process lead data',
       'GET /health': 'Health check'
