@@ -65,7 +65,7 @@ const addLeadNote = tool({
           lead_numbers_id: input.lead_numbers_id,
           message: input.content, // ⚠️ SEE WARNING BELOW
           type: 'note',
-          com_type: 'sms',
+          com_type: input.message_type,
           message_type:input.message_type,
           whatsapp_numbers_id: input.whatsapp_numbers_id
         })
