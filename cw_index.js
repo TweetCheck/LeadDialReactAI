@@ -5,7 +5,7 @@ import { OpenAI } from "openai";
 import { runGuardrails } from "@openai/guardrails";
 
 let hasLoggedNote = false;
-let apiUrl = process.env.CW_API_URL || '';
+let CW_API_URL = process.env.CW_API_URL || '';
 // Tool definitions
 const addLeadNote = tool({
   name: "addLeadNote",
@@ -40,7 +40,7 @@ const addLeadNote = tool({
     console.log("Note added:", input);
 
     const response = await fetch(
-      `${apiUrl}/developer/api/tenant/lead/send-customer-sms`,
+      `${CW_API_URL}/api/tenant/lead/send-customer-sms`,
       {
         method: "POST",
         headers: {
@@ -76,7 +76,7 @@ const updateLeadFields = tool({
     console.log("Lead fields updated:", input);
 
     try {
-      const response = await fetch(`${apiUrl}/developer/api/tenant/lead/update-customer-info`, {
+      const response = await fetch(`${CW_API_URL}/api/tenant/lead/update-customer-info`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

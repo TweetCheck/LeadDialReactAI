@@ -15,7 +15,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 let apiUrl = process.env.API_URL || '';
-let cwApiUrl = process.env.CW_API_URL || '';
+let cwapiUrl = process.env.CW_API_URL || '';
 //
 // ✅ FIXED: Remove process.env.API_URL from route path
 // Just use '/lead-details' 
@@ -169,10 +169,10 @@ app.post('/cw-lead-details', async (req, res) => {
       lead_numbers_id: lead_numbers_id,
       content: result.response_text || 'No reply generated.',
       content_type: 'text',
-      sms_url: cwApiUrl
+      sms_url: cwapiUrl + '/api/tenant/lead/send-customer-sms',
     };
 
-    const smsResult = await sendCustomerSMS(smsParams);
+    const smsResult = await sendCWCustomerSMS(smsParams);
 
     res.status(200).json({
       success: true,
@@ -221,6 +221,7 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url
 
     clearTimeout(timeoutId); // Clear the timeout if the request succeeds
     const result = await response.json();
+    console.log("sms_url",sms_url);
     console.log("📤 SMS API response:", result);
     return { success: true, result };
 
@@ -238,6 +239,48 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url
   }
 }
 
+async function sendCWCustomerSMS({ lead_numbers_id, content, content_type,sms_url }) {
+  const CONTROLLER_TIMEOUT_MS = 20000; // Timeout after 20 seconds
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CONTROLLER_TIMEOUT_MS);
+
+    const response = await fetch(
+      `${sms_url}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          lead_numbers_id,
+          message: content,
+          type: content_type
+        }),
+        signal: controller.signal // Add the abort signal
+      }
+    );
+
+    clearTimeout(timeoutId); // Clear the timeout if the request succeeds
+    const result = await response.json();
+    console.log("sms_url",sms_url);
+    console.log("📤 SMS API response:", result);
+    return { success: true, result };
+
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      console.error(`❌ SMS request timed out after ${CONTROLLER_TIMEOUT_MS}ms`);
+      return { 
+        success: false, 
+        error: `Request to SMS API timed out after ${CONTROLLER_TIMEOUT_MS}ms` 
+      };
+    } else {
+      console.error("❌ Failed to send SMS:", error);
+      return { success: false, error: error.message };
+    }
+  }
+}
 
 // Health check endpoint
 app.get('/health', (req, res) => {
