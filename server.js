@@ -250,12 +250,6 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type,sms_url 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), CONTROLLER_TIMEOUT_MS);
-    console.log("Sending SMS to URL:", sms_url);
-    console.log(JSON.stringify({
-          lead_numbers_id,
-          message: content,
-          type: content_type
-        }));
     const response = await fetch(
       `${sms_url}`,
       {
