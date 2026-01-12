@@ -72,10 +72,10 @@ app.post('/lead-details', async (req, res) => {
       context: workflowContext
     });
     console.log('🤖 Workflow result:', result);
-    
+    let smsParams;
     // Send SMS with note_type if available
-    if(message_type == 'sms') {
-      const smsParams = {
+    if(message_type == 'whatsapp') {
+       smsParams = {
         lead_numbers_id: lead_numbers_id,
         content: result.response_text || 'No reply generated.',
         content_type: 'text',
@@ -84,7 +84,7 @@ app.post('/lead-details', async (req, res) => {
         whatsapp_numbers_id: whatsapp_numbers_id
       };
     }else{
-      const smsParams = {
+       smsParams = {
         lead_numbers_id: lead_numbers_id,
         content: result.response_text || 'No reply generated.',
         content_type: 'text',
@@ -93,7 +93,6 @@ app.post('/lead-details', async (req, res) => {
         whatsapp_numbers_id: whatsapp_numbers_id
       };
     }
-
     const smsResult = await sendCustomerSMS(smsParams);
 
     res.status(200).json({
@@ -172,7 +171,7 @@ app.post('/cw-lead-details', async (req, res) => {
       sms_url: cwapiUrl + '/api/tenant/lead/send-customer-sms',
     };
 
-    const smsResult = await sendCWCustomerSMS(smsParams);
+    const smsResult = await sendCustomerSMS(smsParams);
 
     res.status(200).json({
       success: true,
