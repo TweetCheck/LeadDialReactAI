@@ -192,7 +192,7 @@ app.post('/cw-lead-details', async (req, res) => {
 });
 
 
-async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url, message_type, whatsapp_numbers_id }) {
+async function sendCWCustomerSMS({ lead_numbers_id, content, content_type, sms_url, message_type, whatsapp_numbers_id }) {
   const CONTROLLER_TIMEOUT_MS = 20000; // Timeout after 20 seconds
 
   try {
@@ -239,7 +239,7 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url
   }
 }
 
-async function sendCWCustomerSMS({ lead_numbers_id, content, content_type,sms_url }) {
+async function sendCustomerSMS({ lead_numbers_id, content, content_type,sms_url }) {
   const CONTROLLER_TIMEOUT_MS = 20000; // Timeout after 20 seconds
 
   try {
