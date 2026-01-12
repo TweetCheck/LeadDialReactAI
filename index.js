@@ -45,8 +45,9 @@ const addLeadNote = tool({
     // if (callCount > 1) { console.trace("📞 Multiple calls detected from:"); }
     
     // Add delay to see if calls are simultaneous
+    console.log('ss url',input.message_type);
     const endpoint =
-      input.message_type === 'sms'
+      input.message_type == 'sms'
         ? '/api/tenant/lead/send-customer-sms'
         : '/api/tenant/lead/send-customer-whatsapp';
         console.log("Note added:", input);
