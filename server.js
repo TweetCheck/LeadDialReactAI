@@ -170,9 +170,10 @@ app.post('/cw-lead-details', async (req, res) => {
       content_type: 'text',
       sms_url: cwapiUrl + '/api/tenant/lead/send-customer-sms',
     };
-
+    console.log('SMS uurl:', sms_url);
+    console.log('SMS Params:', smsParams);
     const smsResult = await sendCustomerSMS(smsParams);
-
+    console.log('SMS Result1:', smsResult);
     res.status(200).json({
       success: true,
       message: 'Lead processed successfully',
