@@ -79,7 +79,7 @@ app.post('/lead-details', async (req, res) => {
         lead_numbers_id: lead_numbers_id,
         content: result.response_text || 'No reply generated.',
         content_type: 'text',
-        sms_url: apiUrl + '/api/tenant/lead/send-customer-sms',
+        sms_url: apiUrl + '/api/tenant/lead/send-customer-whatsapp',
         message_type: message_type,
         whatsapp_numbers_id: whatsapp_numbers_id
       };
@@ -88,12 +88,12 @@ app.post('/lead-details', async (req, res) => {
         lead_numbers_id: lead_numbers_id,
         content: result.response_text || 'No reply generated.',
         content_type: 'text',
-        sms_url: apiUrl + '/api/tenant/lead/send-customer-whatsapp',
+        sms_url: apiUrl + '/api/tenant/lead/send-customer-sms',
         message_type: message_type,
         whatsapp_numbers_id: whatsapp_numbers_id
       };
     }
-    const smsResult = await sendCustomerSMS(smsParams);
+    const smsResult = await sendCWCustomerSMS(smsParams);
 
     res.status(200).json({
       success: true,
