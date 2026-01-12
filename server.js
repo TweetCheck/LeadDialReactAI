@@ -164,9 +164,15 @@ app.post('/cw-lead-details', async (req, res) => {
     console.log('🤖 Workflow result:', result);
     
     // Send SMS with note_type if available
+    let cleanContent = result.response_text || 'No reply generated.';
+
+    if (cleanContent.includes('Customer Message:')) {
+      cleanContent = cleanContent.split('Customer Message:')[1].trim();
+    }
+
     const smsParams = {
       lead_numbers_id: lead_numbers_id,
-      content: result.response_text || 'No reply generated.',
+      content: cleanContent,
       content_type: 'text',
       sms_url: cwapiUrl + '/api/tenant/lead/send-customer-sms',
     };
