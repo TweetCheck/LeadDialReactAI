@@ -46,11 +46,11 @@ const addLeadNote = tool({
     
     // Add delay to see if calls are simultaneous
     console.log('ss url',input.message_type);
-    const endpoint = '/api/tenant/lead/send-customer-sms'
-      if(input.message_type == 'whatsapp')
-      {
-        endpoint = '/api/tenant/lead/send-customer-whatsapp'
-      }
+    let endpoint = '/api/tenant/lead/send-customer-sms';
+
+    if (input.message_type === 'whatsapp') {
+      endpoint = '/api/tenant/lead/send-customer-whatsapp';
+    }
         console.log("Note added:", input);
         console.log("Sending to URL:", `${apiUrl}${endpoint}`);
 
