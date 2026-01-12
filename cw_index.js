@@ -1,30 +1,20 @@
-process.env.OTEL_SDK_DISABLED = 'true';
-process.env.OTEL_TRACES_SAMPLER = 'always_off';
-process.env.OPENAI_AGENTS_DISABLE_TELEMETRY = 'true';
-
-// Prevent any telemetry loading
-if (typeof process.env.NODE_OPTIONS === 'undefined') {
-  process.env.NODE_OPTIONS = '--no-node-snapshot';
-}
-
-import 'dotenv/config';
 import { tool, fileSearchTool, Agent, Runner, withTrace } from "@openai/agents";
 import { z } from "zod";
+import "dotenv/config";
+import { OpenAI } from "openai";
+import { runGuardrails } from "@openai/guardrails";
 
-
-// Tool definitions
-let callCount = 0;
 let hasLoggedNote = false;
-let apiUrl = process.env.API_URL || '';
+let apiUrl = process.env.CW_API_URL || '';
+// Tool definitions
 const addLeadNote = tool({
   name: "addLeadNote",
-  description: "Add a short, structured note to the lead's record based on the SMS conversation without changing lead or booking fields. CRITICAL: Only call this ONCE per conversation to summarize the outcome.",
+  description: "Add a short, structured note to the lead’s record based on the SMS conversation without changing lead or booking fields or inform about the update.",
   parameters: z.object({
     lead_id: z.number(),
     lead_numbers_id: z.number(),
-    whatsapp_numbers_id: z.number(),
     note_type: z.string(),
-    message_type: z.string(),
+    channel: z.string(),
     content: z.string()
   }),
   execute: async (input) => {
@@ -45,14 +35,12 @@ const addLeadNote = tool({
     // if (callCount > 1) { console.trace("📞 Multiple calls detected from:"); }
     
     // Add delay to see if calls are simultaneous
-    const endpoint =
-      input.message_type === 'sms'
-        ? '/api/tenant/lead/send-customer-sms'
-        : '/api/tenant/lead/send-customer-whatsapp';
-        console.log("Note added:", input);
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    console.log("Note added:", input);
 
     const response = await fetch(
-      `${apiUrl}${endpoint}`,
+      `${apiUrl}/developer/api/tenant/lead/send-customer-sms`,
       {
         method: "POST",
         headers: {
@@ -61,10 +49,7 @@ const addLeadNote = tool({
         body: JSON.stringify({
           lead_numbers_id: input.lead_numbers_id,
           message: input.content, // ⚠️ SEE WARNING BELOW
-          type: 'note',
-          com_type: 'sms',
-          message_type:input.message_type,
-          whatsapp_numbers_id: input.whatsapp_numbers_id
+          type: 'note'
         })
       }
     );
@@ -77,7 +62,7 @@ const addLeadNote = tool({
 
 const updateLeadFields = tool({
   name: "updateLeadFields",
-  description: "Update fields of a lead using its lead ID; only lead ID is required, other fields are optional and can be updated or inserted if not present.",
+  description: "Update fields of a lead based on the given lead_id",
   parameters: z.object({
     lead_id: z.string(),
     name: z.string(),
@@ -87,11 +72,11 @@ const updateLeadFields = tool({
     move_date: z.string(),
     move_size: z.string()
   }),
-  execute: async (input) => {
+   execute: async (input) => {
     console.log("Lead fields updated:", input);
 
     try {
-      const response = await fetch(`${apiUrl}/api/tenant/lead/update-customer-info`, {
+      const response = await fetch(`${apiUrl}/developer/api/tenant/lead/update-customer-info`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -158,7 +143,7 @@ const sendPaymentLink = tool({
     payment_link: z.string()
   }),
   execute: async (input) => {
-    console.log("Payment link sent:", input);
+    console.log("Send Payment Link Tool called with input:", input);
     return { success: true, payment_link: input.payment_link, formatted_for_customer: `Here is your payment link: ${input.payment_link}` };
     // TODO: Unimplemented
   },
@@ -172,33 +157,95 @@ const sendInvoiceLink = tool({
     invoice_link: z.string()
   }),
   execute: async (input) => {
-    console.log("Invoice link sent:", input); 
+    console.log("Send Invoice Link Tool called with input:", input);
     return { success: true, invoice_link: input.invoice_link,  formatted_for_customer: `Here is your invoice: ${input.invoice_link}` };
     // TODO: Unimplemented
   },
 });
-
-const sendInventoryLink = tool({
-  name: "sendInventoryLink",
-  description: "Generate and send an inventory form link to the customer",
-  parameters: z.object({
-    lead_id: z.string(),
-    inventory_link: z.string()
-  }),
-  execute: async (input) => {
-    console.log("Inventory link sent:", input);
-    return { success: true, inventory_link: input.inventory_link,  formatted_for_customer: `Here is your inventory form: ${input.inventory_link}` };
-    // TODO: Unimplemented
-  },
-});
-
 const fileSearch = fileSearchTool([
   "vs_69446993e57c8191a7a96b38f1f3bdc3"
 ])
 
-const maSmsagent = new Agent({
-  name: "MA SMSAgent",
-  instructions: `You are MovingAlly_SMS_Agent, the official SMS/WhatsApp agent for Moving Ally.
+// Shared client for guardrails and file search
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// Guardrails definitions
+const guardrailsConfig = {
+  guardrails: [
+    { name: "Moderation", config: { categories: ["sexual/minors", "hate/threatening", "harassment/threatening", "self-harm/instructions", "violence/graphic", "illicit/violent"] } },
+    { name: "Jailbreak", config: { model: "gpt-4.1-mini", confidence_threshold: 0.7 } },
+    { name: "NSFW Text", config: { model: "gpt-4.1-mini", confidence_threshold: 0.7 } }
+  ]
+};
+const context = { guardrailLlm: client };
+
+function guardrailsHasTripwire(results) {
+    return (results ?? []).some((r) => r?.tripwireTriggered === true);
+}
+
+function getGuardrailSafeText(results, fallbackText) {
+    for (const r of results ?? []) {
+        if (r?.info && ("checked_text" in r.info)) {
+            return r.info.checked_text ?? fallbackText;
+        }
+    }
+    const pii = (results ?? []).find((r) => r?.info && "anonymized_text" in r.info);
+    return pii?.info?.anonymized_text ?? fallbackText;
+}
+
+async function scrubConversationHistory(history, piiOnly) {
+    for (const msg of history ?? []) {
+        const content = Array.isArray(msg?.content) ? msg.content : [];
+        for (const part of content) {
+            if (part && typeof part === "object" && part.type === "input_text" && typeof part.text === "string") {
+                const res = await runGuardrails(part.text, piiOnly, context, true);
+                part.text = getGuardrailSafeText(res, part.text);
+            }
+        }
+    }
+}
+
+async function scrubWorkflowInput(workflow, inputKey, piiOnly) {
+    if (!workflow || typeof workflow !== "object") return;
+    const value = workflow?.[inputKey];
+    if (typeof value !== "string") return;
+    const res = await runGuardrails(value, piiOnly, context, true);
+    workflow[inputKey] = getGuardrailSafeText(res, value);
+}
+
+async function runAndApplyGuardrails(inputText, config, history, workflow) {
+    const guardrails = Array.isArray(config?.guardrails) ? config.guardrails : [];
+    const results = await runGuardrails(inputText, config, context, true);
+    const shouldMaskPII = guardrails.find((g) => (g?.name === "Contains PII") && g?.config && g.config.block === false);
+    if (shouldMaskPII) {
+        const piiOnly = { guardrails: [shouldMaskPII] };
+        await scrubConversationHistory(history, piiOnly);
+        await scrubWorkflowInput(workflow, "input_as_text", piiOnly);
+        await scrubWorkflowInput(workflow, "input_text", piiOnly);
+    }
+    const hasTripwire = guardrailsHasTripwire(results);
+    const safeText = getGuardrailSafeText(results, inputText) ?? inputText;
+    return { results, hasTripwire, safeText, failOutput: buildGuardrailFailOutput(results ?? []), passOutput: { safe_text: safeText } };
+}
+
+function buildGuardrailFailOutput(results) {
+    const get = (name) => (results ?? []).find((r) => ((r?.info?.guardrail_name ?? r?.info?.guardrailName) === name));
+    const pii = get("Contains PII"), mod = get("Moderation"), jb = get("Jailbreak"), hal = get("Hallucination Detection"), nsfw = get("NSFW Text"), url = get("URL Filter"), custom = get("Custom Prompt Check"), pid = get("Prompt Injection Detection"), piiCounts = Object.entries(pii?.info?.detected_entities ?? {}).filter(([, v]) => Array.isArray(v)).map(([k, v]) => k + ":" + v.length), conf = jb?.info?.confidence;
+    return {
+        pii: { failed: (piiCounts.length > 0) || pii?.tripwireTriggered === true, detected_counts: piiCounts },
+        moderation: { failed: mod?.tripwireTriggered === true || ((mod?.info?.flagged_categories ?? []).length > 0), flagged_categories: mod?.info?.flagged_categories },
+        jailbreak: { failed: jb?.tripwireTriggered === true },
+        hallucination: { failed: hal?.tripwireTriggered === true, reasoning: hal?.info?.reasoning, hallucination_type: hal?.info?.hallucination_type, hallucinated_statements: hal?.info?.hallucinated_statements, verified_statements: hal?.info?.verified_statements },
+        nsfw: { failed: nsfw?.tripwireTriggered === true },
+        url_filter: { failed: url?.tripwireTriggered === true },
+        custom_prompt_check: { failed: custom?.tripwireTriggered === true },
+        prompt_injection: { failed: pid?.tripwireTriggered === true },
+    };
+}
+
+const countrywideSmsAgnet = new Agent({
+  name: "Countrywide SMS Agnet",
+  instructions: `You are Countrywide_SMS_Agent, the official SMS/WhatsApp agent for Countrywide.
 Always greet the customer using their name if available in CRM.
 
 You help customers with quotes, bookings, payments, invoices, inventory, and issues.
@@ -304,28 +351,28 @@ IF lead_status != \"booked\":
 \"An invoice is available only after a booking is completed.\"
 
 --------------------------------------------------
-INVENTORY HANDLING (STRICT, STATUS-BASED)
+INVENTORY HANDLING – COUNTRYWIDE (NO INVENTORY LINK)
 --------------------------------------------------
-Inventory can be added or updated ONLY when:
-- lead_status = \"not_booked\"
+- There is NO inventory link for Countrywide
+- Inventory is NEVER collected via SMS or WhatsApp
 
-IF lead_status = \"not_booked\" AND customer asks to add/update inventory:
-→ Call send_inventory_link
-→ Log ONE add_lead_note (ai_general)
-→ Reply with the inventory link
+IF the customer asks about inventory (ANY lead_status):
 
---------------------------------------------------
-INVENTORY RESTRICTIONS
---------------------------------------------------
-IF lead_status IN (\"quote_generated\", \"quote_sent\", \"booked\") AND customer asks about inventory:
+PRIMARY ACTION:
+- Transfer the conversation to a live agent if an agent is available
 
-- NEVER send inventory link
-- NEVER collect inventory in chat
-
+IF an agent is NOT available:
 You MUST:
 → Log ONE add_lead_note (ai_change_request)
+→ Clearly describe what inventory help the customer requested
 → Reply:
-\"I’ve noted your inventory request and shared it with the team for review.\"
+\"I’ve shared this with our team, and an agent will get back to you shortly to help with your inventory.\"
+
+INVENTORY RULES (ABSOLUTE):
+- NEVER send an inventory link
+- NEVER collect inventory details in chat
+- NEVER ask inventory follow-up questions
+- NEVER promise timing or outcomes
 
 --------------------------------------------------
 LEAD HANDLING
@@ -410,12 +457,29 @@ TOOL EXECUTION RULES
 --------------------------------------------------
 LINK RETURN RULE (MANDATORY)
 --------------------------------------------------
-If a tool returns a link (payment, invoice, inventory),
+If a tool returns a link (payment or invoice),
 you MUST include that link directly in the SMS reply.
 
 You are FORBIDDEN from:
 - Saying a link was sent without showing it
 - Modifying, shortening, or guessing links
+
+
+------------------------------------------------------------------
+OUTPUT FORMAT (MANDATORY)
+------------------------------------------------------------------
+Always respond in EXACTLY this order:
+
+Tool Calls:
+- List all required tool calls in order as valid JSON
+- OR output exactly: NO TOOL CALL NEEDED
+
+Customer Message:
+- 1–2 short plain-text sentences
+- No internal or technical language
+
+Never reverse, merge, or skip sections.
+Never output anything other than the above.
 `,
   model: "gpt-5.2",
   tools: [
@@ -423,7 +487,6 @@ You are FORBIDDEN from:
     updateLeadFields,
     sendPaymentLink,
     sendInvoiceLink,
-    sendInventoryLink,
     fileSearch
   ],
   modelSettings: {
@@ -436,16 +499,40 @@ You are FORBIDDEN from:
   }
 });
 
+const countrywideFailedSms = new Agent({
+  name: "Countrywide Failed SMS",
+  instructions: `You are a system error response agent.
 
-// work
+Your ONLY job is to return the following message exactly as written:
+
+\"Please ask a valid question.\"
+
+Do not ask questions.
+Do not explain.
+Do not add any extra text.
+Do not use tools.
+Return only the message.
+`,
+  model: "gpt-5.2",
+  modelSettings: {
+    reasoning: {
+      effort: "low",
+      summary: "auto"
+    },
+    store: true
+  }
+});
+
+
+
+
 // Main code entrypoint
-// In index.js - modify runWorkflow to format properly
-export const runWorkflow = async (workflow) => {
-  console.log(`[runWorkflow] Starting for lead ${workflow.context?.lead_id || 'unknown'}`);
-  hasLoggedNote = false;
-  const WORKFLOW_TIMEOUT_MS = 30000; // 30 seconds
-  
-  try {
+export const runWorkflowCw = async (workflow) => {
+  return await withTrace("Countrywide SMS Stage", async () => {
+    const state = {
+
+    };
+    hasLoggedNote = false;
     const conversationHistory = [
       { 
         role: "user", 
@@ -457,41 +544,51 @@ export const runWorkflow = async (workflow) => {
         ] 
       }
     ];
-    
-    const runner = new Runner();
-    
-    // ⭐ ADD TIMEOUT
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        reject(new Error(`Workflow timeout after ${WORKFLOW_TIMEOUT_MS}ms`));
-      }, WORKFLOW_TIMEOUT_MS);
+    const runner = new Runner({
+      traceMetadata: {
+        __trace_source__: "agent-builder",
+        workflow_id: "wf_695c036f88f08190a2e88aa433377cf20aab5674a70b7a20"
+      }
     });
-    
-    const maSmsagentResultTemp = await Promise.race([
-      runner.run(maSmsagent, conversationHistory, [...conversationHistory]),
-      timeoutPromise
-    ]);
-    
-    if (!maSmsagentResultTemp?.finalOutput) {
-      throw new Error("Agent returned no output");
-    }
-    
-    let finalOutput = maSmsagentResultTemp.finalOutput;
-    
-    console.log(`[runWorkflow] ✅ Completed`);
-    
-    return {
-      response_text: finalOutput
-    };
-    
-  } catch (error) {
-    console.error(`[runWorkflow] ❌ Error:`, error.message);
-    
-    // Return fallback that won't confuse the customer
-    return {
-      response_text: `NO TOOL CALL NEEDED\n\nCustomer Message: I've received your message and will process it shortly.`
-    };
-  }
-};
+    const guardrailsInputText = workflow.input_as_text;
+    const { hasTripwire: guardrailsHasTripwire, safeText: guardrailsAnonymizedText, failOutput: guardrailsFailOutput, passOutput: guardrailsPassOutput } = await runAndApplyGuardrails(guardrailsInputText, guardrailsConfig, conversationHistory, workflow);
+    const guardrailsOutput = (guardrailsHasTripwire ? guardrailsFailOutput : guardrailsPassOutput);
+    if (guardrailsHasTripwire) {
+      const countrywideFailedSmsResultTemp = await runner.run(
+        countrywideFailedSms,
+        [
+          ...conversationHistory
+        ]
+      );
+      conversationHistory.push(...countrywideFailedSmsResultTemp.newItems.map((item) => item.rawItem));
 
-export { addLeadNote, maSmsagent, updateLeadFields, sendPaymentLink, sendInvoiceLink, sendInventoryLink, fileSearch };
+      if (!countrywideFailedSmsResultTemp.finalOutput) {
+          throw new Error("Agent result is undefined");
+      }
+
+      const countrywideFailedSmsResult = {
+        output_text: countrywideFailedSmsResultTemp.finalOutput ?? ""
+      };
+      return countrywideFailedSmsResult;
+    } else {
+      const countrywideSmsAgnetResultTemp = await runner.run(
+        countrywideSmsAgnet,
+        [
+          ...conversationHistory
+        ]
+      );
+
+      if (!countrywideSmsAgnetResultTemp.finalOutput) {
+          throw new Error("Agent result is undefined");
+      }
+
+      const countrywideSmsAgnetResult = {
+        output_text: countrywideSmsAgnetResultTemp.finalOutput ?? ""
+      };
+      const endResult = {
+        response_text: countrywideSmsAgnetResult.output_text
+      };
+      return endResult;
+    }
+  });
+}
