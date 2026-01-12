@@ -22,8 +22,9 @@ const addLeadNote = tool({
   parameters: z.object({
     lead_id: z.number(),
     lead_numbers_id: z.number(),
+    whatsapp_numbers_id: z.number(),
     note_type: z.string(),
-    channel: z.string(),
+    message_type: z.string(),
     content: z.string()
   }),
   execute: async (input) => {
@@ -44,11 +45,14 @@ const addLeadNote = tool({
     // if (callCount > 1) { console.trace("📞 Multiple calls detected from:"); }
     
     // Add delay to see if calls are simultaneous
-    
-    console.log("Note added:", input);
+    const endpoint =
+      input.message_type === 'sms'
+        ? '/api/tenant/lead/send-customer-sms'
+        : '/api/tenant/lead/send-customer-whatsapp';
+        console.log("Note added:", input);
 
     const response = await fetch(
-      `${apiUrl}/api/tenant/lead/send-customer-sms`,
+      `${apiUrl}${endpoint}`,
       {
         method: "POST",
         headers: {
@@ -58,7 +62,9 @@ const addLeadNote = tool({
           lead_numbers_id: input.lead_numbers_id,
           message: input.content, // ⚠️ SEE WARNING BELOW
           type: 'note',
-          com_type: 'sms'
+          com_type: 'sms',
+          message_type:input.message_type,
+          whatsapp_numbers_id: input.whatsapp_numbers_id
         })
       }
     );

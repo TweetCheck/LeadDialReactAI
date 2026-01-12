@@ -242,6 +242,7 @@ function buildGuardrailFailOutput(results) {
         prompt_injection: { failed: pid?.tripwireTriggered === true },
     };
 }
+
 const countrywideSmsAgnet = new Agent({
   name: "Countrywide SMS Agnet",
   instructions: `You are Countrywide_SMS_Agent, the official SMS/WhatsApp agent for Countrywide.
@@ -462,6 +463,23 @@ you MUST include that link directly in the SMS reply.
 You are FORBIDDEN from:
 - Saying a link was sent without showing it
 - Modifying, shortening, or guessing links
+
+
+------------------------------------------------------------------
+OUTPUT FORMAT (MANDATORY)
+------------------------------------------------------------------
+Always respond in EXACTLY this order:
+
+Tool Calls:
+- List all required tool calls in order as valid JSON
+- OR output exactly: NO TOOL CALL NEEDED
+
+Customer Message:
+- 1–2 short plain-text sentences
+- No internal or technical language
+
+Never reverse, merge, or skip sections.
+Never output anything other than the above.
 `,
   model: "gpt-5.2",
   tools: [

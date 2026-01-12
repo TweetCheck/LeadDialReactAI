@@ -38,6 +38,8 @@ app.post('/lead-details', async (req, res) => {
       payment_link,
       inventory_link,
       lead_status,
+      message_type,
+      whatsapp_numbers_id,
       sms_content
     } = req.body;
 
@@ -60,7 +62,9 @@ app.post('/lead-details', async (req, res) => {
       invoice_link,
       payment_link,
       inventory_link,
-      lead_status
+      lead_status,
+      message_type,
+      whatsapp_numbers_id
     };
     console.log('🔧 Workflow Context:', workflowContext);
     const result = await runWorkflow({
@@ -70,12 +74,25 @@ app.post('/lead-details', async (req, res) => {
     console.log('🤖 Workflow result:', result);
     
     // Send SMS with note_type if available
-    const smsParams = {
-      lead_numbers_id: lead_numbers_id,
-      content: result.response_text || 'No reply generated.',
-      content_type: 'text',
-      sms_url: apiUrl
-    };
+    if(message_type == 'sms') {
+      const smsParams = {
+        lead_numbers_id: lead_numbers_id,
+        content: result.response_text || 'No reply generated.',
+        content_type: 'text',
+        sms_url: apiUrl + '/api/tenant/lead/send-customer-sms',
+        message_type: message_type,
+        whatsapp_numbers_id: whatsapp_numbers_id
+      };
+    }else{
+      const smsParams = {
+        lead_numbers_id: lead_numbers_id,
+        content: result.response_text || 'No reply generated.',
+        content_type: 'text',
+        sms_url: apiUrl + '/api/tenant/lead/send-customer-whatsapp',
+        message_type: message_type,
+        whatsapp_numbers_id: whatsapp_numbers_id
+      };
+    }
 
     const smsResult = await sendCustomerSMS(smsParams);
 
@@ -175,7 +192,7 @@ app.post('/cw-lead-details', async (req, res) => {
 });
 
 
-async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url }) {
+async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url, message_type, whatsapp_numbers_id }) {
   const CONTROLLER_TIMEOUT_MS = 20000; // Timeout after 20 seconds
 
   try {
@@ -183,7 +200,7 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url
     const timeoutId = setTimeout(() => controller.abort(), CONTROLLER_TIMEOUT_MS);
 
     const response = await fetch(
-      `${sms_url}/api/tenant/lead/send-customer-sms`,
+      `${sms_url}`,
       {
         method: "POST",
         headers: {
@@ -193,7 +210,10 @@ async function sendCustomerSMS({ lead_numbers_id, content, content_type, sms_url
           lead_numbers_id,
           message: content,
           type: content_type,
-          com_type: 'sms' // Ensure com_type is set to 'sms'
+          com_type: 'sms',
+          message_type,
+          whatsapp_numbers_id
+
         }),
         signal: controller.signal // Add the abort signal
       }
