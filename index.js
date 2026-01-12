@@ -70,6 +70,7 @@ const addLeadNote = tool({
     );
 
     const result = await response.json();
+    console.log("sms_url", `${apiUrl}${endpoint}`);
     console.log("📤 SMS response:", result);
     return { success: true, data: result };
   },
