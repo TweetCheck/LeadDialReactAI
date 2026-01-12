@@ -209,7 +209,7 @@ async function sendCWCustomerSMS({ lead_numbers_id, content, content_type, sms_u
           lead_numbers_id,
           message: content,
           type: content_type,
-          com_type: 'sms',
+          com_type: message_type,
           message_type,
           whatsapp_numbers_id
 
