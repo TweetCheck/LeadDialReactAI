@@ -4,7 +4,7 @@ import "dotenv/config";
 import { OpenAI } from "openai";
 import { runGuardrails } from "@openai/guardrails";
 
-let hasLoggedNote = false;
+
 let CW_API_URL = process.env.CW_API_URL || '';
 // Tool definitions
 const addLeadNote = tool({
@@ -18,17 +18,6 @@ const addLeadNote = tool({
     content: z.string()
   }),
   execute: async (input) => {
-    // ⛔ THE FIX: If we already logged a note, stop immediately.
-    if (hasLoggedNote) {
-      console.warn("🚫 BLOCKED: addLeadNote called multiple times. Ignoring this call.");
-      return { success: false, reason: "Duplicate note blocked by system guard" };
-    }
-
-    // Set the flag so we know a note has been sent
-    hasLoggedNote = true; 
-
-    callCount++;
-    console.log(`🔢 Call #${callCount} to addLeadNote (Allowed)`);
     console.log("📝 Note content:", input.content);
     
     // Log stack trace only if something went wrong (optional)
@@ -580,7 +569,6 @@ export const runWorkflowCw = async (workflow) => {
     const state = {
 
     };
-    hasLoggedNote = false;
     const conversationHistory = [
       { 
         role: "user", 
