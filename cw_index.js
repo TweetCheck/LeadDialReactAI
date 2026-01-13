@@ -4,7 +4,8 @@ import "dotenv/config";
 import { OpenAI } from "openai";
 import { runGuardrails } from "@openai/guardrails";
 
-
+let callCount = 0;
+let hasLoggedNote = false;
 let CW_API_URL = process.env.CW_API_URL || '';
 // Tool definitions
 const addLeadNote = tool({
@@ -18,14 +19,20 @@ const addLeadNote = tool({
     content: z.string()
   }),
   execute: async (input) => {
-    console.log("📝 Note content:", input.content);
+    
+    if (hasLoggedNote) {
+      console.warn("🚫 BLOCKED: addLeadNote called multiple times. Ignoring this call.");
+      return { success: false, reason: "Duplicate note blocked by system guard" };
+    }
     
     // Log stack trace only if something went wrong (optional)
     // if (callCount > 1) { console.trace("📞 Multiple calls detected from:"); }
     
     // Add delay to see if calls are simultaneous
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
+    hasLoggedNote = true; 
+
+    callCount++;
+    console.log(`🔢 Call #${callCount} to addLeadNote (Allowed)`);
     console.log("Note added:", input);
 
     const response = await fetch(
@@ -566,6 +573,7 @@ Return only the message.
 // Main code entrypoint
 export const runWorkflowCw = async (workflow) => {
   return await withTrace("Countrywide SMS Stage", async () => {
+    hasLoggedNote = false;
     const state = {
 
     };
