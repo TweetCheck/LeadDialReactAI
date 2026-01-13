@@ -15,7 +15,7 @@ import { z } from "zod";
 // Tool definitions
 let callCount = 0;
 let hasLoggedNote = false;
-let apiUrl = process.env.API_URL || '';
+let CW_API_URL = process.env.CW_API_URL || '';
 
 const addLeadNote = tool({
   name: "addLeadNote",
