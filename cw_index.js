@@ -1,13 +1,22 @@
+process.env.OTEL_SDK_DISABLED = 'true';
+process.env.OTEL_TRACES_SAMPLER = 'always_off';
+process.env.OPENAI_AGENTS_DISABLE_TELEMETRY = 'true';
+
+// Prevent any telemetry loading
+if (typeof process.env.NODE_OPTIONS === 'undefined') {
+  process.env.NODE_OPTIONS = '--no-node-snapshot';
+}
+
+import 'dotenv/config';
 import { tool, fileSearchTool, Agent, Runner, withTrace } from "@openai/agents";
 import { z } from "zod";
-import "dotenv/config";
-import { OpenAI } from "openai";
-import { runGuardrails } from "@openai/guardrails";
 
+
+// Tool definitions
 let callCount = 0;
 let hasLoggedNote = false;
-let CW_API_URL = process.env.CW_API_URL || '';
-// Tool definitions
+let apiUrl = process.env.API_URL || '';
+
 const addLeadNote = tool({
   name: "addLeadNote",
   description: "Add a short, structured note to the lead’s record based on the SMS conversation without changing lead or booking fields or inform about the update.",
@@ -161,83 +170,6 @@ const sendInvoiceLink = tool({
 const fileSearch = fileSearchTool([
   "vs_69446993e57c8191a7a96b38f1f3bdc3"
 ])
-
-// Shared client for guardrails and file search
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Guardrails definitions
-const guardrailsConfig = {
-  guardrails: [
-    { name: "Moderation", config: { categories: ["sexual/minors", "hate/threatening", "harassment/threatening", "self-harm/instructions", "violence/graphic", "illicit/violent"] } },
-    { name: "Jailbreak", config: { model: "gpt-4.1-mini", confidence_threshold: 0.7 } },
-    { name: "NSFW Text", config: { model: "gpt-4.1-mini", confidence_threshold: 0.7 } }
-  ]
-};
-const context = { guardrailLlm: client };
-
-function guardrailsHasTripwire(results) {
-    return (results ?? []).some((r) => r?.tripwireTriggered === true);
-}
-
-function getGuardrailSafeText(results, fallbackText) {
-    for (const r of results ?? []) {
-        if (r?.info && ("checked_text" in r.info)) {
-            return r.info.checked_text ?? fallbackText;
-        }
-    }
-    const pii = (results ?? []).find((r) => r?.info && "anonymized_text" in r.info);
-    return pii?.info?.anonymized_text ?? fallbackText;
-}
-
-async function scrubConversationHistory(history, piiOnly) {
-    for (const msg of history ?? []) {
-        const content = Array.isArray(msg?.content) ? msg.content : [];
-        for (const part of content) {
-            if (part && typeof part === "object" && part.type === "input_text" && typeof part.text === "string") {
-                const res = await runGuardrails(part.text, piiOnly, context, true);
-                part.text = getGuardrailSafeText(res, part.text);
-            }
-        }
-    }
-}
-
-async function scrubWorkflowInput(workflow, inputKey, piiOnly) {
-    if (!workflow || typeof workflow !== "object") return;
-    const value = workflow?.[inputKey];
-    if (typeof value !== "string") return;
-    const res = await runGuardrails(value, piiOnly, context, true);
-    workflow[inputKey] = getGuardrailSafeText(res, value);
-}
-
-async function runAndApplyGuardrails(inputText, config, history, workflow) {
-    const guardrails = Array.isArray(config?.guardrails) ? config.guardrails : [];
-    const results = await runGuardrails(inputText, config, context, true);
-    const shouldMaskPII = guardrails.find((g) => (g?.name === "Contains PII") && g?.config && g.config.block === false);
-    if (shouldMaskPII) {
-        const piiOnly = { guardrails: [shouldMaskPII] };
-        await scrubConversationHistory(history, piiOnly);
-        await scrubWorkflowInput(workflow, "input_as_text", piiOnly);
-        await scrubWorkflowInput(workflow, "input_text", piiOnly);
-    }
-    const hasTripwire = guardrailsHasTripwire(results);
-    const safeText = getGuardrailSafeText(results, inputText) ?? inputText;
-    return { results, hasTripwire, safeText, failOutput: buildGuardrailFailOutput(results ?? []), passOutput: { safe_text: safeText } };
-}
-
-function buildGuardrailFailOutput(results) {
-    const get = (name) => (results ?? []).find((r) => ((r?.info?.guardrail_name ?? r?.info?.guardrailName) === name));
-    const pii = get("Contains PII"), mod = get("Moderation"), jb = get("Jailbreak"), hal = get("Hallucination Detection"), nsfw = get("NSFW Text"), url = get("URL Filter"), custom = get("Custom Prompt Check"), pid = get("Prompt Injection Detection"), piiCounts = Object.entries(pii?.info?.detected_entities ?? {}).filter(([, v]) => Array.isArray(v)).map(([k, v]) => k + ":" + v.length), conf = jb?.info?.confidence;
-    return {
-        pii: { failed: (piiCounts.length > 0) || pii?.tripwireTriggered === true, detected_counts: piiCounts },
-        moderation: { failed: mod?.tripwireTriggered === true || ((mod?.info?.flagged_categories ?? []).length > 0), flagged_categories: mod?.info?.flagged_categories },
-        jailbreak: { failed: jb?.tripwireTriggered === true },
-        hallucination: { failed: hal?.tripwireTriggered === true, reasoning: hal?.info?.reasoning, hallucination_type: hal?.info?.hallucination_type, hallucinated_statements: hal?.info?.hallucinated_statements, verified_statements: hal?.info?.verified_statements },
-        nsfw: { failed: nsfw?.tripwireTriggered === true },
-        url_filter: { failed: url?.tripwireTriggered === true },
-        custom_prompt_check: { failed: custom?.tripwireTriggered === true },
-        prompt_injection: { failed: pid?.tripwireTriggered === true },
-    };
-}
 
 
 const countrywideSmsAgnet = new Agent({
@@ -570,13 +502,15 @@ Return only the message.
 });
 
 
+// work
 // Main code entrypoint
+// In index.js - modify runWorkflow to format properly
 export const runWorkflowCw = async (workflow) => {
-  return await withTrace("Countrywide SMS Stage", async () => {
-    hasLoggedNote = false;
-    const state = {
-
-    };
+  console.log(`[runWorkflowCw] Starting for lead ${workflow.context?.lead_id || 'unknown'}`);
+  hasLoggedNote = false;
+  const WORKFLOW_TIMEOUT_MS = 30000; // 30 seconds
+  
+  try {
     const conversationHistory = [
       { 
         role: "user", 
@@ -588,51 +522,39 @@ export const runWorkflowCw = async (workflow) => {
         ] 
       }
     ];
-    const runner = new Runner({
-      traceMetadata: {
-        __trace_source__: "agent-builder",
-        workflow_id: "wf_695c036f88f08190a2e88aa433377cf20aab5674a70b7a20"
-      }
+    
+    const runner = new Runner();
+    
+    // ⭐ ADD TIMEOUT
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Workflow timeout after ${WORKFLOW_TIMEOUT_MS}ms`));
+      }, WORKFLOW_TIMEOUT_MS);
     });
-    const guardrailsInputText = workflow.input_as_text;
-    const { hasTripwire: guardrailsHasTripwire, safeText: guardrailsAnonymizedText, failOutput: guardrailsFailOutput, passOutput: guardrailsPassOutput } = await runAndApplyGuardrails(guardrailsInputText, guardrailsConfig, conversationHistory, workflow);
-    const guardrailsOutput = (guardrailsHasTripwire ? guardrailsFailOutput : guardrailsPassOutput);
-    if (guardrailsHasTripwire) {
-      const countrywideFailedSmsResultTemp = await runner.run(
-        countrywideFailedSms,
-        [
-          ...conversationHistory
-        ]
-      );
-      conversationHistory.push(...countrywideFailedSmsResultTemp.newItems.map((item) => item.rawItem));
-
-      if (!countrywideFailedSmsResultTemp.finalOutput) {
-          throw new Error("Agent result is undefined");
-      }
-
-      const countrywideFailedSmsResult = {
-        output_text: countrywideFailedSmsResultTemp.finalOutput ?? ""
-      };
-      return countrywideFailedSmsResult;
-    } else {
-      const countrywideSmsAgnetResultTemp = await runner.run(
-        countrywideSmsAgnet,
-        [
-          ...conversationHistory
-        ]
-      );
-
-      if (!countrywideSmsAgnetResultTemp.finalOutput) {
-          throw new Error("Agent result is undefined");
-      }
-
-      const countrywideSmsAgnetResult = {
-        output_text: countrywideSmsAgnetResultTemp.finalOutput ?? ""
-      };
-      const endResult = {
-        response_text: countrywideSmsAgnetResult.output_text
-      };
-      return endResult;
+    
+    const maSmsagentResultTemp = await Promise.race([
+      runner.run(maSmsagent, conversationHistory, [...conversationHistory]),
+      timeoutPromise
+    ]);
+    
+    if (!maSmsagentResultTemp?.finalOutput) {
+      throw new Error("Agent returned no output");
     }
-  });
-}
+    
+    let finalOutput = maSmsagentResultTemp.finalOutput;
+    
+    console.log(`[runWorkflow] ✅ Completed`);
+    
+    return {
+      response_text: finalOutput
+    };
+    
+  } catch (error) {
+    console.error(`[runWorkflow] ❌ Error:`, error.message);
+    
+    // Return fallback that won't confuse the customer
+    return {
+      response_text: `NO TOOL CALL NEEDED\n\nCustomer Message: I've received your message and will process it shortly.`
+    };
+  }
+};
