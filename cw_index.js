@@ -172,7 +172,7 @@ const fileSearch = fileSearchTool([
 ])
 
 
-const countrywideSmsAgnet = new Agent({
+const maSmsagent = new Agent({
   name: "Countrywide SMS Agnet",
   instructions: `You are Countrywide_SMS_Agent, the official SMS/WhatsApp agent for Countrywide.
 Always greet the customer using their name if available in CRM.
@@ -471,30 +471,6 @@ Never output anything other than the above.
     parallelToolCalls: true,
     reasoning: {
       effort: "medium",
-      summary: "auto"
-    },
-    store: true
-  }
-});
-
-const countrywideFailedSms = new Agent({
-  name: "Countrywide Failed SMS",
-  instructions: `You are a system error response agent.
-
-Your ONLY job is to return the following message exactly as written:
-
-\"Please ask a valid question.\"
-
-Do not ask questions.
-Do not explain.
-Do not add any extra text.
-Do not use tools.
-Return only the message.
-`,
-  model: "gpt-5.2",
-  modelSettings: {
-    reasoning: {
-      effort: "low",
       summary: "auto"
     },
     store: true
