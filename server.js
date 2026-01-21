@@ -43,7 +43,7 @@ app.post('/lead-details', async (req, res) => {
       sms_content
     } = req.body;
 
-    const input_as_text = `${sms_content}`;
+    const input_as_text = `${sms_content} Please check this image and let us know what items are in it.`;
     //console.log('📨 Lead received:', lead_id);
     //console.log('🔧 Workflow input:', input_as_text);
     
@@ -64,8 +64,7 @@ app.post('/lead-details', async (req, res) => {
       inventory_link,
       lead_status,
       message_type,
-      whatsapp_numbers_id,
-      sms_content
+      whatsapp_numbers_id
     };
     console.log('🔧 Workflow Context:', workflowContext);
     const result = await runWorkflow({
