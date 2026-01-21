@@ -64,7 +64,8 @@ app.post('/lead-details', async (req, res) => {
       inventory_link,
       lead_status,
       message_type,
-      whatsapp_numbers_id
+      whatsapp_numbers_id,
+      sms_content
     };
     console.log('🔧 Workflow Context:', workflowContext);
     const result = await runWorkflow({
