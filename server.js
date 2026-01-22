@@ -228,6 +228,15 @@ async function sendCWCustomerSMS({ lead_numbers_id, content, content_type, sms_u
     clearTimeout(timeoutId); // Clear the timeout if the request succeeds
     const result = await response.json();
     console.log("sms_url",sms_url);
+    console.log("sms_param",JSON.stringify({
+          lead_numbers_id,
+          message: content,
+          type: content_type,
+          com_type: message_type,
+          message_type,
+          whatsapp_numbers_id
+
+        }));
     console.log("📤 SMS API response:", result);
     return { success: true, result };
 
